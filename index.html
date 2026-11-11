@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI ERA · 이환우 포트폴리오</title>
+<meta name="description" content="바이브 코딩으로 깬 작전들 — 이환우 포트폴리오 허브">
+<!-- 링크 공유 미리보기 -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="AI ERA · 이환우 포트폴리오">
+<meta property="og:description" content="바이브 코딩으로 깬 작전들을 게임처럼 모아 둔 포트폴리오">
+<meta property="og:url" content="https://hwanwoolee.github.io/portfolio-hub/">
+<meta property="og:image" content="https://hwanwoolee.github.io/portfolio-hub/images/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="불타는 격납고 안의 AI ERA 타이틀 화면">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<!-- 글꼴 3개만 (design.md 2-1) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- 무료·상업적 이용 가능(SIL OFL): Black Han Sans(디스플레이), Chakra Petch(HUD) -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@500;600;700&display=swap">
+<style>
+  /* ===== 디자인 토큰 (design.md 1-1 정령 테스트 그대로 + 1-4 앰버 새로 추가) ===== */
+  :root{
+    --bg:#0B0C10;
+    --text:#EEE9E0; --sub:#A19E97; --dim:#66645F;
+    --accent:#D9D3C7; --accent-l:#F6F1E7; --accent-d:#5E5A52;
+    --p-top:rgba(36,38,46,.58); --p-bot:rgba(17,18,23,.70); --well:rgba(8,9,12,.72);
+    --glass:blur(16px) saturate(1.2);
+    --bevel:inset 0 1px 0 rgba(255,255,255,.075), inset 0 -2px 0 rgba(0,0,0,.38), inset 0 0 0 1px rgba(255,255,255,.022);
+    --lift:0 1px 0 rgba(0,0,0,.65), 0 14px 30px -16px rgba(0,0,0,.9);
+    --r:12px;
+    --f-disp:"Black Han Sans","Pretendard",sans-serif;
+    --f-hud:"Chakra Petch","Pretendard",sans-serif;
+    /* 포인트 색: 출격·진행·클리어에만 */
+    --amber-l:#E8C58C; --amber:#C8913F; --amber-d:#6B461A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Pretendard",-apple-system,"Malgun Gothic",sans-serif;
+    background:var(--bg); color:var(--text);
+    -webkit-font-smoothing:antialiased; overflow-x:hidden; word-break:keep-all;
+  }
+  a{color:inherit}
+  :focus-visible{outline:2px solid var(--text);outline-offset:4px}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+  /* ===== 배경 세계: 불타는 격납고 (원경 실사 사진 + 그 위에 투명한 WebGL 3D) ===== */
+  .scene{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;background:#0B0C10}
+  /* 원경 사진: JS가 "아주 먼 곳에 세운 판"처럼 위치·크기를 잡는다 */
+  .photo{position:absolute;left:0;top:0;width:1200px;height:550px;transform-origin:0 0;will-change:transform;
+    background:#0B0C10 url("images/hangar-sky.jpg") center/cover no-repeat}
+  #world{position:absolute;inset:0;width:100%;height:100%;display:block}
+  /* WebGL을 못 쓸 때: 사진만 화면 가득 + 조명 덮개 */
+  .scene.flat .photo{left:-16px;top:-16px;right:-16px;bottom:-16px;width:auto;height:auto;
+    background-position:50% 80%;filter:brightness(.6) saturate(.9)}
+  .scene.flat #world{display:none}
+  /* 로비: 같은 격납고의 작전실 쪽. 어둡고 살짝 흐리게 (정령 테스트 .scene.dim 방식), 패널은 유리라 뒤가 흐릿하게 비친다 */
+  .scene.dim{filter:blur(3px) brightness(.64) saturate(.85)}
+  /* 덮개: 비네팅 (+ 사진만 보일 때는 아래로 갈수록 어둡게) */
+  .bg{position:absolute;inset:0;
+    background:radial-gradient(ellipse 90% 80% at 50% 45%, transparent 45%, rgba(5,5,8,.7) 100%)}
+  .scene.flat .bg{
+    background:
+      radial-gradient(ellipse 85% 75% at 50% 42%, transparent 35%, rgba(5,5,8,.78) 100%),
+      linear-gradient(180deg,rgba(12,12,16,.35) 0%,rgba(10,10,13,.45) 55%,rgba(8,8,10,.8) 100%)}
+  /* 위에서 떨어지는 조명: 사진만 보일 때만 (3D에서는 탐조등이 대신함) */
+  .light{position:absolute;inset:0;display:none;
+    background:
+      radial-gradient(70% 55% at 50% -12%, rgba(255,244,226,.13), transparent 62%),
+      radial-gradient(48% 40% at 50% -6%, color-mix(in srgb,var(--accent) 18%,transparent), transparent 70%);
+    animation:breatheLight 8s ease-in-out infinite}
+  .scene.flat .light{display:block}
+  @keyframes breatheLight{0%,100%{filter:brightness(.85)}50%{filter:brightness(1.15)}}
+  .noise{position:absolute;inset:0;opacity:.07;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  /* 연기 장막: 출격 → 로비 전환 때 화면을 덮었다가 걷힘 (투명도는 JS가 조절) */
+  .veil{position:fixed;inset:0;z-index:30;pointer-events:none;opacity:0;visibility:hidden;overflow:hidden;background:var(--bg)}
+  .veil i{position:absolute;inset:-25%;will-change:transform;
+    background:
+      radial-gradient(38% 34% at 28% 40%, rgba(102,100,95,.22), transparent 72%),
+      radial-gradient(44% 40% at 72% 62%, rgba(161,158,151,.09), transparent 72%),
+      radial-gradient(30% 28% at 55% 22%, rgba(102,100,95,.14), transparent 70%)}
+  /* 소리 버튼·건너뛰기 안내·사진 출처 */
+  .snd{position:fixed;top:16px;right:20px;z-index:40;display:flex;gap:8px}
+  /* 소리 버튼: PC는 글자, 휴대폰은 아이콘. 켜짐/꺼짐은 아이콘 모양(꺼지면 사선)으로 구분 */
+  .snd .ico{display:none;width:18px;height:18px;vertical-align:middle}
+  .snd .ico .off-mark{display:none}
+  .snd [aria-pressed="false"] .ico .off-mark{display:inline}
+  .snd [aria-pressed="false"] .ico .on-mark{display:none}
+  /* 터치 기기: 키보드 안내는 숨긴다 */
+  @media (hover:none) and (pointer:coarse){
+    .title .hint,.brief .go .hint,.lfoot .keys{display:none}
+  }
+  .hudbar .snd{position:static;z-index:auto}   /* 로비에서는 위 HUD 바 안, "타이틀로" 왼쪽 */
+  .skip{display:none;position:fixed;left:0;right:0;bottom:22px;z-index:40;text-align:center;font-size:13px;color:var(--sub);text-shadow:0 1px 2px rgba(0,0,0,.8)}
+  body.sortie .skip{display:block}
+  .credit{position:fixed;right:16px;bottom:10px;font-size:12px;color:var(--sub);text-shadow:0 1px 2px rgba(0,0,0,.8)}
+  body.in-lobby .credit,body.sortie .credit{display:none}
+  .title.out{pointer-events:none}
+
+  /* ===== 화면 공통 ===== */
+  .wrap{max-width:1080px;margin:0 auto;padding:26px 20px 40px;min-height:100vh;display:flex;flex-direction:column}
+  .screen{display:none;flex:1;flex-direction:column;animation:in .5s ease both}
+  .screen.on{display:flex}
+  .screen.out{animation:out .5s ease forwards}
+  @keyframes out{from{opacity:1}to{opacity:0}}
+  @keyframes in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+  .disp{font-family:var(--f-disp);font-weight:400;letter-spacing:-.01em;color:var(--text);
+    text-shadow:0 3px 0 var(--accent-d),0 4px 0 rgba(0,0,0,.5),0 14px 26px rgba(0,0,0,.55)}
+  .eyebrow{font-size:14px;color:var(--sub);font-weight:600}
+
+  /* 유리 패널 (design.md 3-1) */
+  .hud-panel{padding:22px 24px;border-radius:18px;
+    background:linear-gradient(180deg,rgba(26,27,33,.58),rgba(13,14,18,.7));
+    -webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08),inset 0 0 0 1px rgba(255,255,255,.05),0 24px 50px -24px rgba(0,0,0,.9)}
+
+  /* 입체 버튼 (design.md 3-2) */
+  .btn{appearance:none;border:0;cursor:pointer;font:inherit;position:relative;border-radius:14px;display:inline-block;text-align:center;text-decoration:none;
+    font-family:var(--f-hud);font-weight:700;letter-spacing:.14em;font-size:18px;padding:16px 60px 15px;
+    color:#2A241B;background:linear-gradient(180deg,#FBF6EC 0%,#E4DCCB 55%,#CFC5B1 100%);
+    box-shadow:inset 0 1px 0 #fff,inset 0 -2px 0 rgba(0,0,0,.12),0 6px 0 #8C8371,0 7px 0 #3A362E,0 16px 24px -8px rgba(0,0,0,.7);
+    transition:transform .08s,box-shadow .08s,filter .15s}
+  .btn:hover{filter:brightness(1.04)}
+  .btn:active{transform:translateY(6px);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 2px 6px rgba(0,0,0,.18),0 0 0 #8C8371,0 1px 0 #3A362E,0 4px 10px -4px rgba(0,0,0,.6)}
+  .btn.ghost{color:var(--text);font-family:"Pretendard",sans-serif;font-weight:700;letter-spacing:0;font-size:15px;padding:14px 24px 13px;
+    background:linear-gradient(180deg,#2C2F38 0%,#22242B 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.1),inset 0 -2px 0 rgba(0,0,0,.3),0 5px 0 #0E0F12,0 14px 22px -10px rgba(0,0,0,.8)}
+  .btn.ghost:active{transform:translateY(5px);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),inset 0 2px 8px rgba(0,0,0,.45),0 0 0 #0E0F12,0 3px 8px -4px rgba(0,0,0,.6)}
+  .btn.ghost.sm{font-size:14px;padding:11px 18px 10px}
+  /* 한글 버튼: Black Han Sans, 자간 0 */
+  .btn.start{font-family:var(--f-disp);font-weight:400;letter-spacing:0;font-size:24px;padding:18px 64px 16px}
+  .btn.enter{font-family:var(--f-disp);font-weight:400;letter-spacing:0;font-size:18px;padding:13px 20px 12px;width:100%}
+  .btn[aria-disabled="true"]{filter:grayscale(1) brightness(.6);pointer-events:none}
+
+  /* ===== 타이틀 ===== */
+  .title{align-items:center;justify-content:center;text-align:center;padding:24px 0}
+  .title .logo-wrap{will-change:transform}
+  .title .kicker{font-family:var(--f-hud);font-weight:700;font-size:14px;letter-spacing:.32em;padding-left:.32em;color:var(--sub)}
+  .logo{font-family:var(--f-disp);font-weight:400;letter-spacing:-.01em;color:var(--text);
+    font-size:clamp(56px,11vw,128px);line-height:1;margin:18px 0 22px;
+    text-shadow:
+      0 1px 0 #B9B2A4, 0 2px 0 #8C8371, 0 4px 0 var(--accent-d), 0 6px 0 #2A2722,
+      0 7px 0 rgba(0,0,0,.6), 0 22px 36px rgba(0,0,0,.6)}
+  /* 부제: 밝은 주황 문 위에서도 읽히도록 글자 뒤에 가장자리가 흐려지는 어두운 띠 (테두리 없음) */
+  .title .tagline{display:inline-block;padding:7px 34px;color:var(--accent);font-size:clamp(15px,2.2vw,18px);font-weight:500;
+    background:linear-gradient(90deg,transparent,rgba(11,12,16,.62) 18%,rgba(11,12,16,.62) 82%,transparent);
+    text-shadow:0 1px 2px rgba(0,0,0,.9),0 2px 10px rgba(0,0,0,.75)}
+  .title .btn.start{margin-top:52px}
+  .hint{margin-top:22px;color:var(--dim);font-size:13px}
+  .title .hint{color:var(--sub);text-shadow:0 1px 2px rgba(0,0,0,.9),0 2px 10px rgba(0,0,0,.75)}
+  .hint kbd{font-family:var(--f-hud);font-weight:600;color:var(--sub);padding:1px 7px;border-radius:6px;
+    background:linear-gradient(180deg,#2B2E37,#1C1E24);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 2px 0 #0B0C0F}
+
+  /* ===== 로비: FPS 게임 로비 (위 HUD 바 / 가운데 요원 정보 + 작전 선택 / 아래 HUD 바) ===== */
+  body.in-lobby .wrap{max-width:1440px;height:100vh;height:100dvh;padding:16px 24px 12px}
+  .lobby{min-height:0;gap:16px}
+
+  /* 유리 표면 (design.md 3-1 .surface) */
+  .surface{background:linear-gradient(180deg,var(--p-top),var(--p-bot));
+    -webkit-backdrop-filter:var(--glass);backdrop-filter:var(--glass);
+    box-shadow:var(--bevel),inset 0 0 0 1px rgba(255,255,255,.04),var(--lift)}
+
+  /* 위쪽 HUD 바 */
+  .hudbar{display:flex;align-items:center;gap:20px;padding:10px 12px 10px 20px;border-radius:var(--r)}
+  .hudbar .brand{flex:1;font-family:var(--f-hud);font-weight:700;font-size:15px;letter-spacing:.08em;color:var(--text)}
+  .lvl{display:flex;align-items:center;gap:12px;font-family:var(--f-hud);font-weight:600;font-size:13px;color:var(--sub);font-variant-numeric:tabular-nums}
+  .lvl b{color:var(--amber-l);font-weight:700;font-size:16px}
+  .lvl .track{width:180px;height:12px}
+
+  /* 유리관 게이지 (design.md 3-3) + 앰버 */
+  .track{position:relative;height:16px;border-radius:999px;overflow:hidden;background:linear-gradient(180deg,#07080A,#14151A);
+    box-shadow:inset 0 2px 4px rgba(0,0,0,.85),inset 0 -1px 0 rgba(255,255,255,.07),0 1px 0 rgba(255,255,255,.05)}
+  .track::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    background:linear-gradient(180deg,rgba(255,255,255,.2) 0,rgba(255,255,255,.05) 38%,transparent 55%,rgba(255,255,255,.05) 100%)}
+  .fill{--cl:var(--amber-l);--c:var(--amber);--cd:var(--amber-d);
+    position:absolute;inset:2px auto 2px 2px;width:0;max-width:calc(100% - 4px);border-radius:999px;
+    background:linear-gradient(180deg,var(--cl) 0%,var(--c) 48%,var(--cd) 100%);
+    box-shadow:0 0 12px color-mix(in srgb,var(--c) 45%,transparent),inset 0 -2px 3px rgba(0,0,0,.25);
+    transition:width 1.1s cubic-bezier(.2,.8,.2,1)}
+  .fill::after{content:"";position:absolute;left:6px;right:6px;top:1px;height:40%;border-radius:999px;
+    background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,0))}
+
+  /* 가운데 */
+  .lobby-main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(300px,360px) minmax(0,1fr);gap:20px}
+
+  /* 왼쪽: 요원 정보 */
+  .agent{display:flex;flex-direction:column;min-height:0;overflow:auto}
+  .agent h2{font-size:clamp(40px,4.4vw,56px);line-height:1.08;margin:8px 0 12px}
+  #pName:focus,#pName:focus-visible{outline:none}
+  .facts{display:grid;grid-template-columns:64px 1fr;gap:6px 12px;font-size:15px}
+  .facts dt{color:var(--sub);font-weight:600}
+  .facts dd{font-weight:500;min-width:0;overflow-wrap:anywhere}
+  .facts a{text-decoration:underline;text-decoration-color:var(--dim);text-underline-offset:3px}
+  .facts a:hover{text-decoration-color:var(--text)}
+  .quote{position:relative;margin:16px 0 22px;font-size:17px;font-weight:700;line-height:1.5;padding-left:16px}
+  .quote::before{content:"";position:absolute;left:0;top:.2em;bottom:.2em;width:4px;border-radius:4px;
+    background:linear-gradient(180deg,var(--accent-l),var(--accent-d))}
+  .sec-h{font-size:14px;color:var(--sub);font-weight:700;margin-bottom:12px}
+  .stats{display:grid;gap:12px;margin-bottom:22px}
+  .stat .sh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;font-size:14px}
+  .stat .sh span{color:var(--sub);font-weight:600}
+  .stat .sh b{font-family:var(--f-hud);font-weight:700;font-size:16px;font-variant-numeric:tabular-nums}
+  .agent .contact{margin-bottom:20px}
+  .agent .more{margin-top:auto;width:100%}
+
+  /* 오른쪽: 작전 선택 */
+  .ops-col{display:flex;flex-direction:column;gap:14px;min-width:0;min-height:0}
+  .brief{position:relative;flex:1;min-height:0;display:flex}
+  /* 작전 브리핑 창: 금속 프레임 (design.md 3-4). 강조색 바깥 글로우 겹은 뺌 (5장 빛 번짐 금지) */
+  /* 작전 브리핑 창: 금속 프레임(design.md 3-4)은 ::before 로 따로 그리고, 안쪽은 유리라 격납고 불빛이 흐릿하게 비친다 */
+  .brief::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;border-radius:18px;border:7px solid transparent;
+    background:linear-gradient(155deg,#F4F1EA 0%,color-mix(in srgb,var(--accent-l) 55%,#9FA1A6) 14%,#3B3C42 32%,
+        color-mix(in srgb,var(--accent) 40%,#C9C8C4) 50%,#2A2B30 68%,color-mix(in srgb,var(--accent-l) 40%,#B9B8B3) 86%,#4A4B50 100%) border-box;
+    -webkit-mask:linear-gradient(#000 0 0) padding-box,linear-gradient(#000 0 0) border-box;-webkit-mask-composite:xor;
+            mask:linear-gradient(#000 0 0) padding-box exclude,linear-gradient(#000 0 0) border-box;
+    box-shadow:0 0 0 1px rgba(0,0,0,.6)}
+  .brief .face{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;border-radius:18px;border:7px solid transparent;
+    padding:52px 44px 34px;
+    background:radial-gradient(90% 80% at 50% 30%,rgba(56,55,54,.6),rgba(15,16,20,.8) 80%) padding-box;
+    -webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15);
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.65),inset 0 2px 0 rgba(255,255,255,.12),inset 0 0 40px rgba(0,0,0,.55),
+      0 30px 50px -24px rgba(0,0,0,.9)}
+  .brief .tag{position:absolute;left:-6px;top:22px;z-index:3;
+    clip-path:polygon(0 0,100% 0,calc(100% - 10px) 100%,0 100%);
+    background:linear-gradient(180deg,var(--accent-l),var(--accent) 60%,var(--accent-d));
+    color:color-mix(in srgb,var(--accent-d) 50%,#000);font-family:var(--f-hud);font-weight:700;font-size:13px;letter-spacing:.16em;
+    text-shadow:0 1px 0 rgba(255,255,255,.35);padding:6px 22px 5px 16px}
+  .brief .tag.clear{--accent-l:var(--amber-l);--accent:var(--amber);--accent-d:var(--amber-d)}
+  .brief .body{display:flex;flex-direction:column;flex:1}
+  .brief .body.swap{animation:swap .28s cubic-bezier(.2,.8,.2,1)}
+  @keyframes swap{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+  .brief h2{font-size:clamp(40px,4.6vw,64px);line-height:1.08;margin:8px 0 14px}
+  .brief .desc{color:var(--sub);font-size:clamp(16px,1.4vw,19px);line-height:1.55;max-width:40em;margin-bottom:28px}
+  .skills{list-style:none;display:grid;gap:12px;max-width:44em}
+  .skills li{display:grid;grid-template-columns:30px 1fr;gap:10px;font-size:16px;font-weight:500;line-height:1.5}
+  .skills li span{font-family:var(--f-hud);font-weight:700;font-size:14px;color:var(--dim);font-variant-numeric:tabular-nums;padding-top:2px}
+  .brief .go{display:flex;align-items:center;gap:16px;margin-top:auto;padding-top:28px}
+  .brief .go .hint{margin:0}
+
+  /* 작전 타일 */
+  .tiles{display:flex;gap:12px;padding-top:8px}
+  .tile{appearance:none;border:0;font:inherit;color:var(--text);cursor:pointer;text-align:left;
+    flex:1 1 0;min-width:0;min-height:92px;padding:14px 14px 12px;border-radius:var(--r);
+    display:flex;flex-direction:column;justify-content:space-between;
+    transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s,background .2s}
+  .tile .k{font-size:12px;font-weight:700;color:var(--amber-l)}
+  .tile .n{font-family:var(--f-disp);font-size:19px;line-height:1.2;text-shadow:0 2px 0 rgba(0,0,0,.6)}
+  @media (hover:hover){ .tile:hover{background:linear-gradient(180deg,rgba(48,51,60,.66),rgba(25,26,32,.76))} }
+  .tile[aria-selected="true"]{transform:translateY(-6px);
+    background:linear-gradient(180deg,rgba(58,54,48,.72),rgba(32,30,28,.8));
+    box-shadow:inset 0 0 0 2px var(--amber),var(--bevel),0 6px 0 #0A0B0E,0 16px 24px -12px rgba(0,0,0,.9)}
+  /* 잠긴 칸 (design.md 3-4) */
+  .slot.locked{flex:1 1 0;min-width:0;min-height:92px;border-radius:var(--r);display:grid;place-items:center;text-align:center;padding:12px;
+    background:linear-gradient(180deg,rgba(22,23,28,.66),rgba(14,15,18,.78));box-shadow:inset 0 2px 8px rgba(0,0,0,.6),inset 0 -1px 0 rgba(255,255,255,.04)}
+  .slot.locked p{font-family:var(--f-disp);font-size:16px;line-height:1.3;color:var(--dim);text-shadow:0 2px 0 rgba(0,0,0,.6)}
+
+  /* 아래쪽 HUD 바: 상자 없이 글자만 */
+  .lfoot{display:flex;justify-content:space-between;gap:16px;font-size:12px;color:var(--sub);text-shadow:0 1px 2px rgba(0,0,0,.9)}
+  .lfoot .keys kbd{font-family:var(--f-hud);font-weight:600;color:var(--sub);padding:1px 6px;border-radius:5px;margin-right:2px;
+    background:linear-gradient(180deg,#2B2E37,#1C1E24);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 2px 0 #0B0C0F}
+  .lfoot .keys span{margin-right:16px}
+
+  @media (max-width:1100px){
+    .brief .face{padding:46px 28px 26px}
+    .tile .n{font-size:17px}
+  }
+  @media (max-height:780px) and (min-width:761px){
+    .agent h2{font-size:40px}
+    .quote{margin:12px 0 16px}
+    .stats{gap:9px;margin-bottom:16px}
+    .brief h2{font-size:44px}
+  }
+  @media (max-width:760px){
+    .wrap{padding:18px 16px 30px}
+    .hud-panel{padding:18px 16px}
+    .title .btn.start{width:100%;max-width:340px;padding-left:20px;padding-right:20px}
+    /* 휴대폰: 요원 정보 → 작전 브리핑 → 타일 가로 스크롤, 화면은 세로 스크롤 */
+    body.in-lobby .wrap{height:auto;min-height:100vh;padding:12px 16px 24px}
+    .hudbar{gap:10px;padding:8px 8px 8px 14px}
+    .hudbar .brand{font-size:14px}
+    .lvl{gap:8px}
+    .lvl .lv{display:none}
+    .lvl .track{width:64px}
+    /* 휴대폰 로비 위쪽 바: 한 줄에 들어가도록 소리 버튼은 아이콘만, 간격·여백을 줄임 */
+    .hudbar{gap:6px;padding:8px 8px 8px 12px}
+    .hudbar .brand{flex:1 0 auto;white-space:nowrap}
+    .lvl{white-space:nowrap}
+    .lvl .track{width:44px}
+    .snd{gap:6px}
+    .snd .btn.ghost.sm{padding:8px;line-height:0}
+    .snd .ico{display:inline-block}
+    .snd .lbl{display:none}
+    .hudbar #backBtn{padding:11px 12px 10px}
+    .lobby-main{display:flex;flex-direction:column;gap:18px}
+    .agent{overflow:visible}
+    .brief .face{padding:46px 20px 22px}
+    .brief .desc{margin-bottom:20px}
+    .skills li{font-size:15px;grid-template-columns:26px 1fr}
+    .brief .go .hint{display:none}
+    .brief .go .btn{width:100%}
+    .tiles{overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:16px;margin:0 -16px;padding:10px 16px 12px;scrollbar-width:none}
+    .tiles::-webkit-scrollbar{display:none}
+    .tile,.slot.locked{flex:0 0 128px;scroll-snap-align:start}
+    .lfoot{justify-content:center;text-align:center}
+    .lfoot .keys{display:none}
+  }
+  /* 움직임 줄이기 (design.md 4-5): 정령 테스트 한 줄 그대로. JS도 matchMedia로 따로 분기 */
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  /* 게임 포인터 (design.md 4-6, 다른 cursor 규칙보다 뒤에 둔다): 기본은 조준선, 누를 수 있는 곳은 "조준 고정". 클릭 지점 = 정중앙(16,16). 마우스 기기에만 */
+  @media (hover:hover) and (pointer:fine){
+    html,body{cursor:url("images/cursor/aim.svg") 16 16,crosshair}
+    a[href],button,.btn,.tile{cursor:url("images/cursor/lock.svg") 16 16,pointer}
+    .btn[aria-disabled="true"]{cursor:url("images/cursor/aim.svg") 16 16,crosshair}
+    input,textarea,select,[contenteditable="true"]{cursor:text}
+  }
+</style>
+</head>
+<body>
+<div class="scene flat" id="scene" aria-hidden="true">
+  <div class="photo" id="photo"></div>
+  <canvas id="world"></canvas>
+  <div class="bg"></div>
+  <div class="light"></div>
+  <div class="noise"></div>
+</div>
+<div class="veil" id="veil" aria-hidden="true"><i></i><i></i></div>
+<div class="snd" id="sndGroup" role="group" aria-label="소리 설정">
+  <button class="btn ghost sm" id="musicBtn" type="button" aria-pressed="true" aria-label="배경음악 켜짐"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/><path class="off-mark" d="M3 3l18 18"/></svg><span class="lbl">배경음악 켜짐</span></button>
+  <button class="btn ghost sm" id="sfxBtn" type="button" aria-pressed="true" aria-label="효과음 켜짐"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="on-mark" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="off-mark" d="M17 9l5 6M22 9l-5 6"/></svg><span class="lbl">효과음 켜짐</span></button>
+</div>
+<div class="skip" aria-hidden="true">Esc 또는 화면을 누르면 건너뜁니다</div>
+<div class="credit">배경 사진: Unsplash</div>
+
+<div class="wrap">
+  <!-- ===== 타이틀 ===== -->
+  <section class="screen title on" id="sTitle" aria-labelledby="logo">
+    <div class="logo-wrap" id="logoWrap">
+      <div class="kicker">LEE HWANWOO · PORTFOLIO</div>
+      <h1 class="logo" id="logo">AI ERA</h1>
+      <p class="tagline" id="tagline">바이브 코딩으로 깬 작전</p>
+    </div>
+    <button class="btn start" id="startBtn" type="button">게임 시작</button>
+    <div class="hint"><kbd>Enter</kbd> 키로도 시작할 수 있어요</div>
+  </section>
+
+  <!-- ===== 로비 ===== -->
+  <section class="screen lobby" id="sLobby" aria-labelledby="pName">
+    <!-- 위쪽 HUD 바 -->
+    <header class="hudbar surface">
+      <span class="brand">AI ERA</span>
+      <div class="lvl">
+        <span class="lv">레벨 <b id="lvNum"></b></span>
+        <div class="track" id="xpTrack" role="progressbar" aria-valuemin="0">
+          <div class="fill" id="xpFill" data-pct="0"></div>
+        </div>
+        <span>작전 <b id="xpNum"></b> / <span id="xpGoal"></span></span>
+      </div>
+      <button class="btn ghost sm" id="backBtn" type="button">타이틀로</button>
+    </header>
+
+    <div class="lobby-main">
+      <!-- 왼쪽: 요원 정보 -->
+      <aside class="hud-panel agent" aria-label="요원 정보">
+        <div class="eyebrow">요원 정보</div>
+        <h2 class="disp" id="pName" tabindex="-1">이환우</h2>
+        <dl class="facts"><dt>전공</dt><dd>전자공학</dd></dl>
+        <p class="quote">긍정은 모든 것을 긍정으로 만든다</p>
+
+        <h3 class="sec-h">직무 역량</h3>
+        <div class="stats" id="stats"></div>
+
+        <h3 class="sec-h">연락</h3>
+        <dl class="facts contact">
+          <dt>GitHub</dt><dd><a href="https://github.com/HwanwooLee" target="_blank" rel="noopener noreferrer">HwanwooLee<span class="sr"> (새 탭)</span></a></dd>
+          <dt>메일</dt><dd><a href="mailto:lhwhappy11@naver.com">lhwhappy11@naver.com</a></dd>
+        </dl>
+        <a class="btn ghost more" href="https://hwanwoolee.github.io/my-profile/" target="_blank" rel="noopener noreferrer">전체 프로필 보기<span class="sr"> (새 탭)</span></a>
+      </aside>
+
+      <!-- 가운데~오른쪽: 작전 선택 -->
+      <div class="ops-col">
+        <section class="brief" id="brief" role="tabpanel" aria-label="작전 브리핑">
+          <span class="tag clear">CLEAR</span>
+          <div class="face">
+            <div class="body" id="bBody">
+              <div class="eyebrow">작전 브리핑</div>
+              <h2 class="disp" id="bName"></h2>
+              <p class="desc" id="bDesc"></p>
+              <h3 class="sec-h">핵심 기술</h3>
+              <ol class="skills" id="bSkills"></ol>
+              <div class="go">
+                <a class="btn start" id="bGo" href="#" target="_blank" rel="noopener noreferrer">작전 진입<span class="sr"> (새 탭)</span></a>
+                <span class="hint"><kbd>Enter</kbd> 키로도 진입</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        <div class="tiles" id="tiles" role="tablist" aria-label="작전 선택"></div>
+      </div>
+    </div>
+
+    <!-- 아래쪽 HUD 바 -->
+    <footer class="lfoot">
+      <span class="keys"><span><kbd>←</kbd><kbd>→</kbd> 작전 선택</span><span><kbd>Enter</kbd> 작전 진입</span></span>
+      <span>화면은 AI 코딩 도구와 함께 만들었습니다 · 배경 사진: Unsplash</span>
+    </footer>
+  </section>
+</div>
+
+<script>
+(() => {
+  /* 전체 음량: 모든 소리(배경음악·효과음·출격)가 이 값을 거쳐 마스터 리미터로 나간다. 1 = 기본, 0.5 = 절반, 0 = 무음 */
+  const MASTER_VOLUME = 1.0;
+  const $ = id => document.getElementById(id);
+  const reduce = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const sTitle = $("sTitle"), sLobby = $("sLobby");
+  let screen = "title", busy = false;
+
+  /* ---------- 출격 연출 (design.md 4-2) ----------
+     주인공은 HUD가 아니라 배경 세계. 격납고가 떨리다 문 너머에서 폭발이 다가와 터지고, 연기가 걷히며 로비가 나온다.
+     연기 장막이 화면을 다 덮었을 때 끝난다(resolve). 값은 건너뛰었는지 여부.
+     Esc 또는 화면 클릭 = 건너뛰기. animationend 에 기대지 않고 시간으로 진행한다 (design.md 4-5). */
+  function playSortie(){
+    return new Promise(resolve => {
+      if(!World.ok){ veilTo(1, 250).then(() => resolve(true)); return; }   // WebGL 없음: 페이드만
+      let done = false, loopId = 0;
+      const t0 = performance.now();
+      sTitle.classList.add("out");
+      World.startSortie(t0);
+      Snd.play(t0);
+      Snd.music.duckSortie(t0);
+      const onKey = e => { if(e.key === "Escape") finish(true); };
+      const onDown = e => { if(e.target.closest && e.target.closest(".snd")) return; finish(true); };
+      const finish = skipped => {
+        if(done) return; done = true;
+        cancelAnimationFrame(loopId);
+        removeEventListener("keydown", onKey); removeEventListener("pointerdown", onDown);
+        if(skipped){ Snd.stop(.15); Snd.music.duckNow(); }
+        veilTo(1, skipped ? 180 : (T.swap - T.veilIn) * 1000).then(() => { World.endSortie(); resolve(skipped); });
+      };
+      addEventListener("keydown", onKey);
+      setTimeout(() => { if(!done) addEventListener("pointerdown", onDown); }, 200);
+      const loop = now => { if((now - t0) / 1000 >= T.veilIn) finish(false); else loopId = requestAnimationFrame(loop); };
+      loopId = requestAnimationFrame(loop);
+    });
+  }
+
+  async function start(){
+    if(busy || screen !== "title") return;
+    busy = true;
+    if(reduce()){                       // 움직임 줄이기: 떨림·폭발 없이 페이드만
+      await veilTo(1, 250); showLobby(); await veilTo(0, 350);
+      return;
+    }
+    const skipped = await playSortie();
+    showLobby();
+    await veilTo(0, skipped ? 350 : T.veilOut * 1000);
+  }
+
+  /* ---------- 로비 데이터 ---------- */
+  const MISSIONS = [
+    { name:"프로필", url:"https://hwanwoolee.github.io/my-profile/",
+      desc:"게임 캐릭터 선택 화면처럼 나를 소개하는 프로필",
+      skills:["FPS 출격 연출과 방폭문 화면 전환을 CSS·JS로 직접 구현",
+              "주소 끝(#)으로 화면을 나눠 휴대폰 뒤로가기 지원",
+              "외부 이미지 없이 index.html 한 파일, GitHub Pages 배포"] },
+    { name:"플래너", url:"https://hwanwoolee.github.io/My_planner/",
+      desc:"할 일을 빈 시간에 넣어 주고 놓친 일을 경고하는 하루 플래너",
+      skills:["빈 시간 자동 배치, 자정을 넘는 일정·시간대 경계 처리",
+              "계획 시간에 저절로 도는 타이머, 놓친 일 빨간 경고와 달성률",
+              "로그인 없이 브라우저 저장(localStorage), 8초 안 되돌리기"] },
+    { name:"랜딩페이지", url:"https://hwanwoolee.github.io/event-landing-next-ai-2026-/",
+      desc:"가상의 AI 기술 체험 페스티벌 'NEXT AI 2026' 행사 페이지",
+      skills:["Vite + React 버전과 단일 HTML 버전 두 가지로 제작",
+              "Three.js 셰이더 입자 구체, 카드 3D 기울기, 스크롤 연출",
+              "GitHub Actions로 빌드해 GitHub Pages 자동 배포"] },
+    { name:"모닝 브리핑", url:"https://hwanwoolee.github.io/morning-briefing/",
+      desc:"개미 투자자가 큰 흐름을 보도록 해외 경제 뉴스를 한국어로 정리하는 아침 브리핑",
+      skills:["CNBC·한국은행 RSS 기사 수집 → Claude API로 번역·요약",
+              "나스닥·S&P 500은 FRED API, 코스피는 한국은행 ECOS API로 전날 종가·등락률 표시",
+              "GitHub Actions로 평일 아침 8시 자동 실행, 기사 건수 대시보드"] },
+    { name:"캠퍼스 정령 도감", url:"https://hwanwoolee.github.io/spirit-test/",
+      desc:"캠퍼스 상황 6개에 답하면 정령 4종 중 하나가 3D로 부화하는 심리 테스트 게임",
+      skills:["답마다 정령 점수와 스탯을 따로 계산해 사람마다 다른 결과",
+              "Three.js(WebGL) 실시간 3D 결과 화면과 원소별 효과",
+              "Gemini로 만든 정령 그림, 무료 배경 사진 출처와 AI 생성 표시"] },
+  ];
+  const STATS = [["수학적 사고",90],["데이터 수집·분석",75],["AI 활용",80],["파이썬 코딩",60]];
+
+  /* ---------- 작전 개수: 전부 MISSIONS 길이에서 계산 (직접 적은 숫자 없음) ---------- */
+  const GOAL = 10, DONE = MISSIONS.length;
+  const KO_COUNT = ["한","두","세","네","다섯","여섯","일곱","여덟","아홉","열","열한","열두","열세","열네","열다섯","열여섯","열일곱","열여덟","열아홉","스무"];
+  const countText = n => n >= 1 && n <= KO_COUNT.length ? `${KO_COUNT[n-1]} 개의 작전` : `${n}개의 작전`;   // 스물을 넘으면 숫자로
+  $("tagline").textContent = `바이브 코딩으로 깬 ${countText(DONE)}`;
+  const metaDesc = document.querySelector('meta[name="description"]');
+  if(metaDesc) metaDesc.content = `바이브 코딩으로 깬 ${countText(DONE)} — 이환우 포트폴리오 허브`;
+  $("lvNum").textContent = DONE; $("xpNum").textContent = DONE; $("xpGoal").textContent = GOAL;
+  $("xpFill").dataset.pct = Math.min(DONE / GOAL, 1) * 100;
+  const xpTrack = $("xpTrack");
+  xpTrack.setAttribute("aria-label", `경험치: 작전 ${GOAL}개 중 ${DONE}개 완료`);
+  xpTrack.setAttribute("aria-valuemax", GOAL); xpTrack.setAttribute("aria-valuenow", Math.min(DONE, GOAL));
+
+  /* ---------- 로비 그리기 ---------- */
+  const tilesEl = $("tiles");
+  tilesEl.innerHTML = MISSIONS.map((m,i) =>
+    `<button class="tile surface" type="button" role="tab" id="tile${i}" aria-controls="brief" aria-selected="false" tabindex="-1" data-i="${i}">
+       <span class="k">완료</span><span class="n">${m.name}</span></button>`).join("")
+    + `<div class="slot locked" aria-label="잠긴 작전: 다음 작전 준비 중"><p>다음 작전<br>준비 중</p></div>`;
+  const tiles = [...tilesEl.querySelectorAll(".tile")];
+
+  $("stats").innerHTML = STATS.map(([t,v]) =>
+    `<div class="stat"><div class="sh"><span>${t}</span><b>${v}</b></div>
+       <div class="track" role="progressbar" aria-label="${t}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${v}"><div class="fill" data-pct="${v}"></div></div></div>`).join("");
+
+  let cur = -1;
+  function select(i, moveFocus){
+    i = (i + MISSIONS.length) % MISSIONS.length;
+    const changed = i !== cur;
+    cur = i;
+    tiles.forEach((t,k) => { t.setAttribute("aria-selected", k===i); t.tabIndex = k===i ? 0 : -1; });
+    const m = MISSIONS[i];
+    $("brief").setAttribute("aria-labelledby", "tile" + i);
+    $("bName").textContent = m.name;
+    $("bDesc").textContent = m.desc;
+    $("bSkills").innerHTML = m.skills.map((s,k) => `<li><span>0${k+1}</span><p></p></li>`).join("");
+    $("bSkills").querySelectorAll("p").forEach((p,k) => p.textContent = m.skills[k]);
+    $("bGo").href = m.url;
+    if(changed && !reduce()){
+      const b = $("bBody"); b.classList.remove("swap"); void b.offsetWidth; b.classList.add("swap");
+    }
+    if(moveFocus) tiles[i].focus();
+    // 휴대폰 가로 스크롤: 고른 타일이 보이게 (페이지 세로 스크롤은 건드리지 않음)
+    if(tilesEl.scrollWidth > tilesEl.clientWidth){
+      const tr = tiles[i].getBoundingClientRect(), cr = tilesEl.getBoundingClientRect();
+      if(tr.left < cr.left || tr.right > cr.right)
+        tilesEl.scrollTo({left: tilesEl.scrollLeft + tr.left - cr.left - 16, behavior: reduce() ? "auto" : "smooth"});
+    }
+  }
+  function enterMission(){
+    if(cur < 0) return;
+    window.open(MISSIONS[cur].url, "_blank", "noopener");
+  }
+  tiles.forEach(t => t.addEventListener("click", () => select(+t.dataset.i)));
+
+  function showLobby(){
+    sTitle.classList.remove("on","out");
+    document.body.classList.add("in-lobby");
+    sLobby.classList.add("on");
+    screen = "lobby"; busy = false;
+    World.setMode("lobby");
+    Snd.music.restore();
+    sLobby.querySelector(".hudbar").insertBefore($("sndGroup"), $("backBtn"));
+    cur = -1; select(0);
+    fillGauges();
+    $("pName").focus({preventScroll:true});
+    window.scrollTo(0,0);
+  }
+
+  function goTitle(){
+    if(busy) return;
+    busy = true;
+    veilTo(1, 200).then(() => {
+      sLobby.classList.remove("on");
+      document.body.classList.remove("in-lobby");
+      sTitle.classList.add("on");
+      screen = "title"; busy = false;
+      sLobby.querySelectorAll(".fill").forEach(f => f.style.width = "0");
+      World.setMode("title");
+      document.body.insertBefore($("sndGroup"), document.querySelector(".skip"));
+      $("startBtn").focus({preventScroll:true});
+      window.scrollTo(0,0);
+      return veilTo(0, 300);
+    });
+  }
+
+  function fillGauges(){
+    const fills = [...sLobby.querySelectorAll(".fill")];
+    fills.forEach(f => f.style.width = "0");
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      fills.forEach(f => f.style.width = `calc((100% - 4px) * ${f.dataset.pct / 100})`);
+    }));
+  }
+
+  $("startBtn").addEventListener("click", start);
+  $("backBtn").addEventListener("click", goTitle);
+  document.addEventListener("keydown", e => {
+    if(e.altKey || e.ctrlKey || e.metaKey) return;
+    if(screen === "title"){
+      if(e.key === "Enter" && !e.repeat){
+        e.preventDefault();   // 버튼에 포커스가 있을 때 click 이 한 번 더 나가지 않게
+        if(!busy) Snd.sfx("clack");
+        start();
+      }
+      return;
+    }
+    if(screen !== "lobby") return;
+    // 다른 링크·버튼에 포커스가 있으면 그 요소의 기본 동작을 따른다
+    const a = document.activeElement;
+    const onTile = !!(a && a.classList && a.classList.contains("tile"));
+    const free = !a || a === document.body || a.id === "pName" || onTile;
+    if(!free) return;
+    if(e.key === "ArrowRight" || e.key === "ArrowLeft"){
+      e.preventDefault();
+      select(cur + (e.key === "ArrowRight" ? 1 : -1), onTile);
+      Snd.sfx("tick");
+    }else if(e.key === "Enter" && !e.repeat){
+      e.preventDefault();
+      Snd.sfx("clack");
+      enterMission();
+    }
+  });
+
+  /* ---------- 효과음: 버튼·작전 타일·링크. 올릴 때 "틱"(들어갈 때 한 번만), 누를 때 "철컥" ---------- */
+  const PRESSABLE = "button, a[href], .tile";
+  const pressable = el => (el && el.closest) ? el.closest(PRESSABLE) : null;
+  document.addEventListener("pointerover", e => {
+    if(e.pointerType !== "mouse") return;                  // 터치는 올림 소리 없음
+    const el = pressable(e.target);
+    if(!el || el === pressable(e.relatedTarget) || el.getAttribute("aria-disabled") === "true" || el.disabled) return;
+    Snd.sfx("tick");
+  });
+  document.addEventListener("click", e => {
+    const el = pressable(e.target);
+    if(!el || el.id === "sfxBtn" || el.getAttribute("aria-disabled") === "true") return;   // 효과음 버튼은 켤 때 스스로 소리를 낸다
+    Snd.sfx("clack");
+  }, true);
+
+  /* ================= 배경 세계: 불타는 격납고 =================
+     원경(노을 하늘·도시) = 실사 사진(DOM)  /  격납고·폐허·빛줄기·불씨·연기 = Three.js(WebGL, 투명 캔버스)
+     사진을 DOM에 둔 이유: 파일을 더블클릭으로 열어도(file://) 보이고, WebGL이 안 되면 사진만 남는다. */
+  const sceneEl = $("scene"), photoEl = $("photo"), logoWrap = $("logoWrap"), veilEl = $("veil");
+  const clamp = (v,a,b) => Math.min(Math.max(v,a),b);
+  const hash = n => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
+  const coarse = () => window.matchMedia && matchMedia("(pointer:coarse)").matches;
+
+  /* 출격 타임라인(초) — design.md 4-2 와 같은 숫자 */
+  const T = { rumble2:1.3, quiet:0.1, blast:2.9, veilIn:3.45, swap:3.95, veilOut:0.8 };
+  /* 문 너머에서 다가오는 폭발: [시각, x, z] */
+  const FLASHES = [[1.30,-60,-330],[1.75,45,-280],[2.10,-25,-220],[2.40,30,-170],[2.65,-5,-120]];
+
+  /* ---------- 연기 장막 (로비 전환용, JS로 투명도만 조절) ---------- */
+  let veilO = 0, veilRaf = 0;
+  const veilLayers = [...veilEl.children];
+  function paintVeil(){
+    veilEl.style.opacity = veilO.toFixed(3);
+    if(reduce()) return;
+    const d = 1 - veilO;   // 걷힐수록 두 겹이 반대 방향으로 흩어짐
+    veilLayers[0].style.transform = `translate3d(${(-d*9).toFixed(2)}%,${(-d*4).toFixed(2)}%,0) scale(${(1+d*.35).toFixed(3)})`;
+    veilLayers[1].style.transform = `translate3d(${(d*9).toFixed(2)}%,${(d*5).toFixed(2)}%,0) scale(${(1+d*.5).toFixed(3)}) rotate(180deg)`;
+  }
+  function veilTo(target, ms){
+    return new Promise(res => {
+      cancelAnimationFrame(veilRaf);
+      const from = veilO, t0 = performance.now();
+      veilEl.style.visibility = "visible";
+      const step = now => {
+        const k = ms <= 0 ? 1 : clamp((now - t0) / ms, 0, 1);
+        veilO = from + (target - from) * k; paintVeil();
+        if(k < 1) veilRaf = requestAnimationFrame(step);
+        else { if(target === 0) veilEl.style.visibility = "hidden"; res(); }
+      };
+      veilRaf = requestAnimationFrame(step);
+    });
+  }
+
+  /* ---------- 소리: Web Audio로 직접 합성 (배경음악 · 효과음 · 출격 소리) ----------
+     출격 소리는 design.md 4-2 "소리 설계", 배경음악·효과음은 4-2 "배경음악·효과음"과 같다. 음원 파일·다른 게임·영화 소리 없음. */
+  const Snd = (() => {
+    let ctx = null, master = null;
+    /* 설정: 배경음악·효과음 따로. 출격 소리는 효과음에 속한다. 이전 버전의 단일 설정(hubSound)이 있으면 둘 다 그 값으로 시작 */
+    const pref = { music:true, sfx:true };
+    try{
+      const old = localStorage.getItem("hubSound"), m = localStorage.getItem("hubMusic"), s = localStorage.getItem("hubSfx");
+      pref.music = (m === null ? old : m) !== "off"; pref.sfx = (s === null ? old : s) !== "off";
+    }catch(e){}
+    const save = k => { try{ localStorage.setItem(k === "music" ? "hubMusic" : "hubSfx", pref[k] ? "on" : "off"); }catch(e){} };
+    function ensure(){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return null;
+      try{ ctx = ctx || new AC(); if(ctx.state === "suspended") ctx.resume(); }catch(e){ ctx = null; }
+      return ctx;
+    }
+
+    /* ---------- 공용 재료 ---------- */
+    const noiseCache = new WeakMap();
+    const whiteBuf = ac => {                                  // 3초짜리 흰 잡음 (반복해도 이음매가 들리지 않음)
+      let b = noiseCache.get(ac); if(b) return b;
+      const n = ac.sampleRate * 3; b = ac.createBuffer(1, n, ac.sampleRate);
+      const d = b.getChannelData(0); for(let i = 0; i < n; i++) d[i] = Math.random()*2 - 1;
+      noiseCache.set(ac, b); return b;
+    };
+    const decayEnv = (ac, t, peak, attack, len) => {          // 빠르게 올라갔다가 지수로 꺼지는 음량
+      const g = ac.createGain(); g.gain.setValueAtTime(.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + attack); g.gain.exponentialRampToValueAtTime(.0001, t + attack + len);
+      return g;
+    };
+    const tone = (ac, dest, f, t, peak, len, type) => {
+      const o = ac.createOscillator(); o.type = type || "sine"; o.frequency.value = f;
+      const g = decayEnv(ac, t, peak, .002, len); o.connect(g); g.connect(dest); o.start(t); o.stop(t + len + .05);
+    };
+    const burst = (ac, dest, t, peak, len, type, f, q) => {   // 짧은 잡음 조각
+      const s = ac.createBufferSource(); s.buffer = whiteBuf(ac);
+      const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.value = f; if(q) fl.Q.value = q;
+      const g = decayEnv(ac, t, peak, .001, len);
+      s.connect(fl); fl.connect(g); g.connect(dest); s.start(t, Math.random()*2); s.stop(t + len + .05);
+    };
+    const makeIR = (ac, sec, curve) => {                      // 직접 만든 잔향(감쇠하는 잡음)
+      const n = Math.floor(ac.sampleRate * sec), b = ac.createBuffer(2, n, ac.sampleRate);
+      for(let ch = 0; ch < 2; ch++){ const d = b.getChannelData(ch); let y = 0;
+        for(let i = 0; i < n; i++){ y += .25 * ((Math.random()*2 - 1) - y); d[i] = y * Math.pow(1 - i / n, curve); } }
+      return b;
+    };
+
+    /* ---------- 마스터: MASTER_VOLUME → 리미터(compressor) → 부드러운 넘침 방지 → 스피커 ----------
+       모든 소리가 여기 하나로 모인다. 리미터가 -3dB 위를 눌러 주고, 그래도 튀는 순간 값은 0.93 아래로 부드럽게 접는다.
+       크롬의 압축기는 막 만들어진 뒤 약 0.15초 동안 첫 소리를 크게 눌러 버리므로(측정: 0.54 → 0.13),
+       처음 0.25초는 압축기를 거치지 않는 길로 보내다가 압축기 길로 넘긴다. 마스터는 첫 클릭·키 입력 순간 미리 만든다. */
+    function masterChain(ac){
+      const t = ac.currentTime, inp = ac.createGain(); inp.gain.value = MASTER_VOLUME;
+      const lim = ac.createDynamicsCompressor();
+      lim.threshold.value = -3; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = .001; lim.release.value = .12;
+      const n = 4096, c = new Float32Array(n);
+      for(let i = 0; i < n; i++){ const x = i / (n - 1) * 2 - 1, a = Math.abs(x);
+        c[i] = Math.sign(x) * (a <= .8 ? a : .8 + .15 * Math.tanh((a - .8) / .15)); }
+      const clip = ac.createWaveShaper(); clip.curve = c; clip.oversample = "none";   // 오버샘플링은 필터 울림으로 0.93을 넘길 수 있어 끈다
+      const wet = ac.createGain(), dry = ac.createGain();
+      wet.gain.setValueAtTime(0, t); wet.gain.setValueAtTime(0, t + .2); wet.gain.linearRampToValueAtTime(1, t + .25);
+      dry.gain.setValueAtTime(1, t); dry.gain.setValueAtTime(1, t + .2); dry.gain.linearRampToValueAtTime(0, t + .25);
+      inp.connect(lim); lim.connect(wet); wet.connect(clip);
+      inp.connect(dry); dry.connect(clip);
+      clip.connect(ac.destination);
+      return inp;
+    }
+    let masterBus = null;
+    const masterIn = () => masterBus || (masterBus = masterChain(ctx));
+    const crunch = (ac, k) => {                               // 포화: 저음에 배음을 만들어 작은 스피커에서도 들리게
+      const n = 1024, c = new Float32Array(n), d = Math.tanh(k);
+      for(let i = 0; i < n; i++) c[i] = Math.tanh((i / (n - 1) * 2 - 1) * k) / d;
+      const w = ac.createWaveShaper(); w.curve = c; return w;
+    };
+
+    /* ---------- 효과음: 마우스 올림 "틱" / 클릭 "철컥" ---------- */
+    function tickAt(ac, dest, t){                             // 짧고 가벼운 금속성 "틱": 1.7~3.6kHz 비정수배 배음 3개 + 3kHz 딸깍
+      tone(ac, dest, 1720, t, .42, .045);
+      tone(ac, dest, 2580, t, .34, .035);
+      tone(ac, dest, 3610, t, .22, .028);
+      burst(ac, dest, t, .5, .005, "bandpass", 3000, 1);
+    }
+    function clackAt(ac, dest, t){                            // 묵직한 기계식 "철컥": 쿵(철) + 0.045초 뒤 걸쇠 소리(컥). 1~4kHz를 충분히
+      // "철": 170 → 58Hz 쿵을 포화시켜 배음을 만들고, 600Hz·1.1kHz 대역 잡음으로 몸통
+      const o = ac.createOscillator(); o.frequency.setValueAtTime(170, t); o.frequency.exponentialRampToValueAtTime(58, t + .08);
+      const og = decayEnv(ac, t, .5, .003, .1), cr = crunch(ac, 3); o.connect(cr); cr.connect(og); og.connect(dest); o.start(t); o.stop(t + .15);
+      burst(ac, dest, t, .45, .04, "bandpass", 650, 1.1);
+      burst(ac, dest, t, .55, .03, "bandpass", 1150, 1.2);
+      // "컥": 3kHz 딸깍 + 걸쇠 울림 1.33 / 1.99 / 2.74 / 3.52kHz
+      const t2 = t + .045;
+      burst(ac, dest, t2, .85, .015, "bandpass", 3000, 1);
+      burst(ac, dest, t2, .38, .01, "highpass", 2500);
+      tone(ac, dest, 1330, t2, .42, .09, "triangle");
+      tone(ac, dest, 1990, t2, .32, .07, "triangle");
+      tone(ac, dest, 2740, t2, .22, .055);
+      tone(ac, dest, 3520, t2, .13, .04);
+    }
+    let sfxBus = null, lastTick = 0;
+    function sfx(kind){
+      if(!pref.sfx) return;
+      if(!ctx){ if(kind === "tick") return; ensure(); }       // 마우스 올림만으로는 소리를 켤 수 없다(브라우저 정책)
+      if(!ctx) return;
+      const go = () => {
+        try{
+          if(!sfxBus){ sfxBus = ctx.createGain(); sfxBus.gain.value = 1; sfxBus.connect(masterIn()); }
+          const t = ctx.currentTime + .005;
+          if(kind === "tick"){ if(t - lastTick < .04) return; lastTick = t; tickAt(ctx, sfxBus, t); }
+          else clackAt(ctx, sfxBus, t);
+        }catch(e){}
+      };
+      if(ctx.state === "running") go(); else if(kind !== "tick") ctx.resume().then(go).catch(() => {});
+    }
+
+    /* ---------- 배경음악: 시네마틱 액션 (120 BPM, D 단조, 8마디 반복) ----------
+       쉬지 않는 16분음표 오스티나토 + 큰 북·킥·마디 끝 타격 + 4·8마디마다 차오르는 아르페지오 + 넓은 패드.
+       발진기·잔향은 계속 돌고, 음표만 0.35초 앞서 예약한다(이음매 없음). 층 구성은 design.md 4-2 "배경음악·효과음". */
+    const MUSIC_LEVEL = .55, BPM = 120, STEP = 60 / BPM / 4, BAR = STEP * 16;   // 16분음표 0.125초, 한 마디 2초, 한 바퀴 16초
+    const mtof = n => 440 * Math.pow(2, (n - 69) / 12);
+    // 진행: Dm Dm B♭ B♭ F C Gm A — B♭·F·C에서 밝게 풀리고, 마지막 A(장화음)에서 긴장이 최고로 올라 다시 Dm으로
+    const PROG = [[38,0], [38,0], [34,1], [34,1], [41,1], [36,1], [43,0], [45,1]];
+    const triad = ([r, maj]) => [r, r + (maj ? 4 : 3), r + 7];
+    const OST_N = [0,0,0,0, 0,0,12,0, 0,0,0,0, 0,0,12,7];                     // 오스티나토 음 (근음 기준 반음)
+    const OST_V = [1,.5,.5,1, .5,.5,1,.5, 1,.5,.5,1, .5,.5,1,.75];            // 3-3-2 강세로 몰아침
+    const KICK  = [1,0,0,0, 0,0,.75,0, 1,0,0,.6, 0,0,0,0];
+    const ARP_LVL = [.3, .3, .38, .55, .45, .6, .8, 1];                       // 4마디째 한 번, 8마디째 크게 차오름
+
+    function musicBuild(ac, dest, t0){
+      const out = ac.createGain(); out.gain.value = 1;
+      const comp = ac.createDynamicsCompressor();
+      comp.threshold.value = -28; comp.knee.value = 8; comp.ratio.value = 4; comp.attack.value = .004; comp.release.value = .2;   // 타격을 고르게 눌러 촘촘하게
+      const sum = ac.createGain(); sum.gain.value = 1; sum.connect(comp); comp.connect(out); out.connect(dest);
+      // 먼 공간: 3.2초 잔향. 좌우 채널을 따로 만들어 넓게 퍼진다
+      const rev = ac.createConvolver(); rev.buffer = makeIR(ac, 3.2, 2.4);
+      const revRet = ac.createGain(); revRet.gain.value = .8; rev.connect(revRet); revRet.connect(sum);
+      /* 층마다 자리: 좌우 위치(pan), 바로 들리는 양(dry), 잔향으로 보내는 양(wet). 가까운 층은 잔향 적게, 먼 층은 많이 */
+      const lane = (pan, dry, wet) => {
+        const inp = ac.createGain(); let node = inp;
+        if(ac.createStereoPanner){ const p = ac.createStereoPanner(); p.pan.value = pan; inp.connect(p); node = p; }
+        const d = ac.createGain(); d.gain.value = dry; node.connect(d); d.connect(sum);
+        if(wet){ const w = ac.createGain(); w.gain.value = wet; node.connect(w); w.connect(rev); }
+        return { inp, node };
+      };
+      const bassL = lane(0, 1, 0).inp;                       // 가운데: 저음·리듬은 한쪽 스피커로 들어도 비지 않게
+      const kickL = lane(0, 1, 0).inp;
+      const snareL = lane(0, .9, .15).inp;
+      const tomL = lane(-.25, 1, .12).inp, tomR = lane(.25, 1, .12).inp;
+      const hatL = lane(.35, .55, .05).inp;
+      const strL = lane(-.45, .8, .25).inp, strR = lane(.45, .8, .25).inp;
+      const padL = lane(-.8, .35, .9).inp, padR = lane(.8, .35, .9).inp;
+      const crashL = lane(-.55, .7, .5).inp, crashR = lane(.55, .7, .5).inp;
+      const riserL = lane(0, .7, .4).inp;
+      // 아르페지오: 천천히 좌우로 움직이고(14초 주기), 좌우로 튀는 메아리(3/16박)를 단다
+      const arpLane = lane(0, .75, .4), arpIn = arpLane.inp;
+      if(arpLane.node.pan){ const lo = ac.createOscillator(); lo.frequency.value = 1 / 14; const lg = ac.createGain(); lg.gain.value = .6; lo.connect(lg); lg.connect(arpLane.node.pan); lo.start(t0); }
+      const d1 = ac.createDelay(1), d2 = ac.createDelay(1), fb = ac.createGain(), echo = ac.createGain();
+      d1.delayTime.value = d2.delayTime.value = STEP * 3; fb.gain.value = .32; echo.gain.value = .3;
+      arpLane.node.connect(echo); echo.connect(d1); d1.connect(d2); d2.connect(fb); fb.connect(d1);
+      const eL = lane(-.75, .8, .3).inp, eR = lane(.75, .8, .3).inp; d1.connect(eL); d2.connect(eR);
+
+      // 넓은 패드: 화음 4음 × 왼쪽·오른쪽 톱니파(살짝 다르게 어긋나 넓어짐), 1400Hz 아래, 아주 천천히 숨쉼. 마디마다 화음이 미끄러지듯 바뀜
+      const padF = ac.createBiquadFilter(); padF.type = "lowpass"; padF.frequency.value = 1400; padF.Q.value = .5;
+      const padF2 = ac.createBiquadFilter(); padF2.type = "lowpass"; padF2.frequency.value = 1400; padF2.Q.value = .5;
+      const padG = ac.createGain(); padG.gain.value = .15; padF.connect(padG); padG.connect(padL);
+      const padG2 = ac.createGain(); padG2.gain.value = .15; padF2.connect(padG2); padG2.connect(padR);
+      const plo = ac.createOscillator(); plo.frequency.value = .05; const plg = ac.createGain(); plg.gain.value = 500;
+      plo.connect(plg); plg.connect(padF.frequency); plg.connect(padF2.frequency); plo.start(t0);
+      const padNotes = c => { const t = triad(c); return [t[0] + 12, t[1] + 12, t[2] + 12, t[0] + 24]; };
+      const padVoices = padNotes(PROG[0]).map(n => [[padF, 1.004], [padF2, .996]].map(([f, k]) => {
+        const o = ac.createOscillator(); o.type = "sawtooth"; o.frequency.value = mtof(n) * k; o.connect(f); o.start(t0); return [o, k]; }));
+
+      /* --- 악기 --- */
+      const osc = (type, f, t, len) => { const o = ac.createOscillator(); o.type = type; o.frequency.value = f; o.start(t); o.stop(t + len); return o; };
+      const ost = (t, n, v) => {                               // 저음 신스 오스티나토: 짧게 끊는 톱니파 둘, 필터가 강세마다 열림
+        const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.Q.value = 5;
+        lp.frequency.setValueAtTime(700 + 2300 * v, t); lp.frequency.exponentialRampToValueAtTime(320, t + .1);
+        const g = decayEnv(ac, t, .42 * v, .004, .11); lp.connect(g); g.connect(bassL);
+        osc("sawtooth", mtof(n) * 1.004, t, .16).connect(lp); osc("sawtooth", mtof(n) * .996, t, .16).connect(lp);
+      };
+      const sub = (t, n) => { const g = decayEnv(ac, t, .22, .006, .4); osc("sine", mtof(n), t, .5).connect(g); g.connect(bassL); };
+      const str = (t, n, side) => {                            // 현악 느낌 스타카토: 톱니파 둘을 300Hz~3kHz로
+        const hp = ac.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 300;
+        const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 3000;
+        const g = decayEnv(ac, t, .13, .012, .15); hp.connect(lp); lp.connect(g); g.connect(side < 0 ? strL : strR);
+        osc("sawtooth", mtof(n) * 1.003, t, .2).connect(hp); osc("sawtooth", mtof(n) * .997, t, .2).connect(hp);
+      };
+      const kick = (t, v) => {                                 // 킥: 140 → 42Hz + 포화시킨 배음(240Hz 중심, 스피커용) + 딸깍
+        const o = ac.createOscillator(); o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(42, t + .12);
+        const g = decayEnv(ac, t, .5 * v, .003, .28); o.connect(g); g.connect(kickL); o.start(t); o.stop(t + .35);
+        const cr = crunch(ac, 4), bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 240; bp.Q.value = .8;
+        const g2 = decayEnv(ac, t, .45 * v, .003, .12); o.connect(cr); cr.connect(bp); bp.connect(g2); g2.connect(kickL);
+        burst(ac, kickL, t, .18 * v, .006, "highpass", 2500);
+      };
+      const snare = (t, v) => {                                // 마디 2·4박 타격: 잡음 1.9kHz + 몸통 210Hz
+        burst(ac, snareL, t, .5 * v, .15, "bandpass", 1900, .8);
+        const o = ac.createOscillator(); o.frequency.setValueAtTime(210, t); o.frequency.exponentialRampToValueAtTime(150, t + .08);
+        const g = decayEnv(ac, t, .3 * v, .002, .09); o.connect(g); g.connect(snareL); o.start(t); o.stop(t + .12);
+      };
+      const tom = (t, f, v, l) => {                            // 큰 북(톰): f → 0.55f + 포화 배음 + 가죽 두드림
+        const o = ac.createOscillator(); o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * .55, t + .3);
+        const g = decayEnv(ac, t, .45 * v, .003, .38); o.connect(g); g.connect(l); o.start(t); o.stop(t + .45);
+        const cr = crunch(ac, 4), bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = f * 2.2; bp.Q.value = .9;
+        const g2 = decayEnv(ac, t, .4 * v, .003, .2); o.connect(cr); cr.connect(bp); bp.connect(g2); g2.connect(l);
+        burst(ac, l, t, .2 * v, .04, "bandpass", 450, 1);
+      };
+      const hat = t => burst(ac, hatL, t, .07, .03, "highpass", 7500);   // 효과음(1.7~3.6kHz)과 겹치지 않게 아주 높고 작게
+      const crash = (t, v) => {                                // 마디 1 "터짐": 넓게 퍼지는 금속 잡음 + 낮은 쿵
+        burst(ac, crashL, t, .16 * v, 1.6, "highpass", 3200); burst(ac, crashR, t, .16 * v, 1.6, "highpass", 3200);
+        const o = ac.createOscillator(); o.frequency.setValueAtTime(90, t); o.frequency.exponentialRampToValueAtTime(36, t + .5);
+        const g = decayEnv(ac, t, .45 * v, .004, 1); o.connect(g); g.connect(kickL); o.start(t); o.stop(t + 1.1);
+        const cr = crunch(ac, 5), g2 = decayEnv(ac, t, .3 * v, .004, .5); o.connect(cr); cr.connect(g2); g2.connect(tomL);
+      };
+      const arp = (t, n, lvl) => {                             // 아르페지오: 사각파 + 한 옥타브 위 삼각파, 차오를수록 밝게
+        const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1400 + 3200 * lvl;
+        const g = decayEnv(ac, t, .1 * lvl, .003, .12); lp.connect(g); g.connect(arpIn);
+        osc("square", mtof(n), t, .16).connect(lp); osc("triangle", mtof(n + 12), t, .16).connect(lp);
+      };
+      const riser = (t, len, v) => {                           // 쌓이는 소리: 잡음이 300 → 6000Hz로 열리며 커졌다가 마디 1에서 뚝
+        const s = ac.createBufferSource(); s.buffer = whiteBuf(ac); s.loop = true;
+        const hp = ac.createBiquadFilter(); hp.type = "bandpass"; hp.Q.value = 1.2;
+        hp.frequency.setValueAtTime(300, t); hp.frequency.exponentialRampToValueAtTime(6000, t + len);
+        const g = ac.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.09 * v, t + len - .02); g.gain.linearRampToValueAtTime(0, t + len);
+        s.connect(hp); hp.connect(g); g.connect(riserL); s.start(t, Math.random() * 2); s.stop(t + len + .05);
+      };
+
+      /* --- 16분음표 하나씩 --- */
+      let nextStep = t0 + .1, step = 0, impact = false;
+      function playStep(i, t){
+        const s = i % 16, bar = Math.floor(i / 16) % 8, ch = PROG[bar], tri = triad(ch), r = ch[0], fill = bar % 4 === 3;
+        if(s === 0){
+          const pn = padNotes(ch);
+          padVoices.forEach((pair, k) => pair.forEach(([o, m]) => o.frequency.setTargetAtTime(mtof(pn[k]) * m, t, .08)));
+          if(bar === 0 || bar === 4 || impact){ crash(t, impact || bar === 0 ? 1 : .6); impact = false; }
+        }
+        ost(t, r + OST_N[s], OST_V[s]);
+        if(s === 0 || s === 8) sub(t, r);
+        if(s % 2 === 0) str(t, tri[(s / 2) % 3] + 12, (s / 2) % 2 ? 1 : -1);
+        if(KICK[s]) kick(t, KICK[s]);
+        if(s === 4 || s === 12) snare(t, 1);
+        if(s % 4 === 2) hat(t);
+        if(!fill){                                             // 마디 끝 3타
+          if(s === 13) tom(t, 150, .7, tomR); if(s === 14) tom(t, 120, .85, tomL); if(s === 15) tom(t, 95, 1, tomR);
+        }else{                                                 // 4마디째: 반 마디 동안 북을 몰아치고 스네어가 쌓임
+          if(s >= 8) tom(t, [160, 150, 135, 125, 115, 105, 95, 85][s - 8], .6 + (s - 8) * .05, s % 2 ? tomR : tomL);
+          if(s >= 12) snare(t, .45 + (s - 12) * .18);
+        }
+        const ARP = [tri[0], tri[1], tri[2], tri[0] + 12, tri[1] + 12, tri[2] + 12, tri[0] + 24];   // 위로 올라가는 7음
+        arp(t, ARP[s % 7] + 24, ARP_LVL[bar]);
+        if(s === 0 && bar === 7) riser(t, BAR, 1);
+        if(s === 8 && bar === 3) riser(t, BAR / 2, .5);
+      }
+      function schedule(from, to){
+        if(nextStep < from) nextStep = from + .05;            // 오래 쉬었다가 다시 시작해도 밀린 음이 한꺼번에 나오지 않게
+        while(nextStep < to){ playStep(step, nextStep); step = (step + 1) % 128; nextStep += STEP; }
+      }
+      // 처음부터 다시: 아직 예약하지 않은 다음 16분음표를 1마디 첫 박으로 만들고 "터짐"을 붙인다. 그 시각을 돌려준다
+      function restart(){ step = 0; impact = true; return nextStep; }
+      return { out, schedule, restart };
+    }
+
+    const Music = (() => {
+      let m = null, timer = 0, ducked = false;
+      const g = () => m.out.gain;
+      const target = () => (pref.music && !document.hidden) ? (ducked ? MUSIC_LEVEL * .08 : MUSIC_LEVEL) : 0;
+      const ramp = (v, tc, at) => { if(!m) return; const p = g(), now = ctx.currentTime;
+        p.cancelScheduledValues(now); p.setValueAtTime(p.value, now); p.setTargetAtTime(v, Math.max(at || now, now), tc); };
+      function tick(){ if(m && ctx) m.schedule(ctx.currentTime, ctx.currentTime + .35); }   // 0.35초 앞까지 예약 (다시 시작할 때 겹치지 않게 짧게)
+      function start(){
+        if(!pref.music || !ctx) return;
+        if(ctx.state !== "running"){ ctx.resume().then(() => { if(ctx.state === "running") start(); }).catch(() => {}); return; }
+        if(!m){ m = musicBuild(ctx, masterIn(), ctx.currentTime); g().setValueAtTime(0, ctx.currentTime); }
+        tick(); clearInterval(timer); timer = setInterval(tick, 100);
+        ramp(target(), 1.3);                                  // 약 4초에 걸쳐 서서히 들어옴
+      }
+      function stop(){ if(!m) return; ramp(0, .2); clearInterval(timer); timer = 0; }
+      /* 출격: 차오르는 동안 35%로 비켜 주고, 폭발 직전 정적(0.1초)부터 8%로 내린다 */
+      function duckSortie(perfT0){
+        if(!m || !pref.music) return;
+        ducked = true;
+        const B = ctx.currentTime - (performance.now() - perfT0) / 1000 + T.blast;
+        ramp(MUSIC_LEVEL * .35, .4);
+        g().setTargetAtTime(MUSIC_LEVEL * .08, Math.max(B - T.quiet, ctx.currentTime + .05), .012);
+      }
+      function duckNow(){ ducked = true; if(m && pref.music) ramp(MUSIC_LEVEL * .08, .03); }
+      /* 로비가 나타나는 순간: 다음 16분음표를 1마디 첫 박으로 다시 시작하고, 그 박에 "터짐"과 함께 음악이 힘차게 들어온다 */
+      function restore(){
+        ducked = false;
+        if(!m || !pref.music) return;
+        const at = m.restart();
+        ramp(target(), .03, at - .03);
+      }
+      document.addEventListener("visibilitychange", () => { if(m) ramp(target(), document.hidden ? .15 : .8); });
+      return { start, stop, duckSortie, duckNow, restore };
+    })();
+
+    /* ---------- 켜기/끄기 버튼 ---------- */
+    const bMusic = $("musicBtn"), bSfx = $("sfxBtn");
+    const paint = () => {
+      const set = (b, name, on) => { const t = `${name} ${on ? "켜짐" : "꺼짐"}`;
+        b.querySelector(".lbl").textContent = t; b.setAttribute("aria-label", t); b.setAttribute("aria-pressed", on); };
+      set(bMusic, "배경음악", pref.music); set(bSfx, "효과음", pref.sfx);
+    };
+    paint();
+    bMusic.addEventListener("click", () => { pref.music = !pref.music; save("music"); paint(); pref.music ? Music.start() : Music.stop(); });
+    bSfx.addEventListener("click", () => { pref.sfx = !pref.sfx; save("sfx"); paint(); if(pref.sfx) sfx("clack"); else stop(.1); });
+
+    /* 브라우저는 사용자 동작 전 자동 재생을 막는다 → 첫 클릭·터치·키 입력 순간 소리를 깨우고 배경음악을 시작 */
+    const UNLOCK = ["pointerdown", "pointerup", "keydown"];
+    const unlock = e => {
+      if(e.type === "keydown" && (e.key === "Escape" || e.repeat)) return;   // Esc는 사용자 동작으로 치지 않는다
+      if(!ensure()) return;
+      masterIn();                                             // 마스터를 먼저 만들어 둔다 (위 masterChain 설명)
+      const ok = () => { UNLOCK.forEach(t => removeEventListener(t, unlock, true)); Music.start(); };
+      if(ctx.state === "running") ok(); else ctx.resume().then(() => { if(ctx.state === "running") ok(); }).catch(() => {});
+    };
+    UNLOCK.forEach(t => addEventListener(t, unlock, true));
+
+    function stop(fade){
+      if(!master || !ctx) return;
+      const m = master; master = null;
+      try{
+        m.gain.cancelScheduledValues(ctx.currentTime);
+        m.gain.setTargetAtTime(0, ctx.currentTime, Math.max(fade, .01) / 3);
+      }catch(e){}
+      setTimeout(() => { try{ m.disconnect(); }catch(e){} }, fade*1000 + 300);
+    }
+
+    /* ac: 오디오 컨텍스트, base: 출격 시작(게임 시작을 누른 순간)에 해당하는 오디오 시각 */
+    function build(ac, base, dest){
+      const now = ac.currentTime, at = t => Math.max(base + t, now);
+      const B = base + T.blast, CUT = B - T.quiet, END = B + 3.8;
+      const G = v => { const g = ac.createGain(); g.gain.value = v === undefined ? 1 : v; return g; };
+      const F = (type, f, q) => { const b = ac.createBiquadFilter(); b.type = type; b.frequency.value = f; if(q) b.Q.value = q; return b; };
+      const shaper = k => {                                   // 부드러운 포화(tanh): 거친 맛을 내거나, 마지막에 넘침을 막는다
+        const n = 2048, c = new Float32Array(n), d = Math.tanh(k);
+        for(let i = 0; i < n; i++) c[i] = Math.tanh((i / (n - 1) * 2 - 1) * k) / d;
+        const w = ac.createWaveShaper(); w.curve = c; w.oversample = "2x"; return w;
+      };
+      const noise = (sec, brown) => {
+        const n = Math.floor(ac.sampleRate * sec), b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0);
+        let l = 0;
+        for(let i = 0; i < n; i++){ const w = Math.random()*2 - 1; if(brown){ l = (l + .02*w) / 1.02; d[i] = l * 3.5; } else d[i] = w; }
+        return b;
+      };
+      const white = noise(2.5, false), brown = noise(2.5, true);
+      const buf = (b, t, dur, loop) => { const s = ac.createBufferSource(); s.buffer = b; s.loop = !!loop; s.start(Math.max(t, now)); s.stop(t + dur); return s; };
+      const osc = (type, f0, f1, tEnd) => {                   // 출격 시작부터 tEnd까지 음높이가 계속 올라가는 발진기
+        const o = ac.createOscillator(); o.type = type;
+        o.frequency.setValueAtTime(f0, at(0)); o.frequency.exponentialRampToValueAtTime(f1, tEnd);
+        o.start(at(0)); o.stop(tEnd + .1); return o;
+      };
+      const env = (p, pts) => { p.setValueAtTime(Math.max(pts[0][1], .0001), Math.max(pts[0][0], now));
+        for(let i = 1; i < pts.length; i++) p.exponentialRampToValueAtTime(Math.max(pts[i][1], .0001), pts[i][0]); };
+      const chain = (...n) => { for(let i = 0; i < n.length - 1; i++) n[i].connect(n[i+1]); return n[n.length - 1]; };
+
+      /* 마지막 단: 마스터(MASTER_VOLUME → 리미터)로 보낸다. post 는 건너뛰기·끄기 때 이 소리만 줄이는 손잡이 */
+      const out = G(1), post = G(1);
+      chain(out, post, dest);
+
+      /* === 차오르는 소리 "드르르르릉" (0 → 폭발 0.1초 전까지 음량·음높이가 계속 올라감) === */
+      const rise = G(0);
+      rise.gain.setValueAtTime(.09, at(0));
+      rise.gain.exponentialRampToValueAtTime(.32, base + T.rumble2);
+      rise.gain.exponentialRampToValueAtTime(1.05, CUT);       // 끝까지 계속 커짐 (마지막엔 마스터 리미터가 눌러 줌)
+      rise.gain.setTargetAtTime(0, CUT, .004);                // 폭발 직전 0.1초: 뚝 끊김
+      rise.connect(out);
+      // 1) 서브베이스: 30 → 62Hz
+      chain(osc("sine", 30, 62, CUT), G(.3), rise);
+      // 2) 거친 엔진음: 톱니파 + 사각파를 포화시키고, 8 → 36Hz로 빨라지는 "드르르" 맥동을 건다
+      const engLP = F("lowpass", 420); engLP.frequency.setValueAtTime(420, at(0)); engLP.frequency.exponentialRampToValueAtTime(2600, CUT);
+      const chug = G(.5), eng = G(1.05);
+      osc("sawtooth", 60, 124, CUT).connect(engLP); chain(osc("square", 45, 93, CUT), G(.6), engLP);
+      chain(engLP, shaper(3), chug, eng, rise);
+      chain(osc("sine", 8, 36, CUT), G(.5), chug.gain);
+      // 2-1) 엔진이 걸리며 우는 소리: 톱니파 210 → 640Hz 를 좁은 대역으로, 같은 "드르르" 맥동에 실음 (스피커에서 들리는 중음)
+      const whBP = F("bandpass", 420, 3); whBP.frequency.setValueAtTime(420, at(0)); whBP.frequency.exponentialRampToValueAtTime(1300, CUT);
+      const wh = G(0); env(wh.gain, [[at(0), .1], [base + T.rumble2, .3], [CUT, .8]]);
+      chain(osc("sawtooth", 210, 640, CUT), whBP, shaper(2), wh, chug);
+      // 3) 금속이 떨리는 소리: 잡음을 좁은 대역 3개로 울리고 24 → 64Hz로 떨게 한다
+      const mTrem = G(.5), mGain = G(0);
+      env(mGain.gain, [[at(0), .12], [base + T.rumble2, .32], [CUT, .9]]);
+      const mSrc = buf(white, at(0), CUT - base + .1, true);
+      for(const [f, q] of [[1250, 7], [2100, 9], [3300, 11]]){
+        const bp = F("bandpass", f, q); bp.frequency.setValueAtTime(f, at(0)); bp.frequency.exponentialRampToValueAtTime(f * 1.3, CUT);
+        mSrc.connect(bp); bp.connect(mTrem);
+      }
+      chain(mTrem, mGain, rise);
+      chain(osc("square", 24, 64, CUT), G(.5), mTrem.gain);
+      // 4) 차오르는 바람 소리: 높은 대역이 점점 열림
+      const wHP = F("highpass", 400); wHP.frequency.setValueAtTime(400, at(0)); wHP.frequency.exponentialRampToValueAtTime(2600, CUT);
+      const wG = G(0); env(wG.gain, [[at(0), .01], [CUT, .3]]);
+      chain(buf(white, at(0), CUT - base + .1, true), wHP, wG, rise);
+      // 5) 문 너머에서 다가오는 폭발 5번: 뒤로 갈수록 크게
+      FLASHES.forEach(([ti], i) => {
+        const t = base + ti, v = .3 + .14*i;
+        if(t < now) return;
+        const ng = G(0); env(ng.gain, [[t, .0001], [t + .02, v * 1.5], [t + .6, .0001]]);
+        chain(buf(brown, t, .7), F("lowpass", 280), ng, rise);
+        const nm = G(0); env(nm.gain, [[t, .0001], [t + .01, v * .9], [t + .35, .0001]]);   // 멀리서 터지는 "퍽"의 중음
+        chain(buf(white, t, .4), F("bandpass", 700, .9), nm, rise);
+        const o = ac.createOscillator(); o.frequency.setValueAtTime(78, t); o.frequency.exponentialRampToValueAtTime(34, t + .4);
+        const og = G(0); env(og.gain, [[t, .0001], [t + .015, v], [t + .5, .0001]]);
+        chain(o, og, rise); o.start(t); o.stop(t + .55);
+      });
+
+      /* === 터지는 소리 "팍" (화면 섬광과 같은 순간 B) === */
+      // 잔향: 3.4초짜리 감쇠 잡음을 직접 만들어 컨볼버에 넣는다
+      const irN = Math.floor(ac.sampleRate * 3.4), ir = ac.createBuffer(2, irN, ac.sampleRate);
+      for(let ch = 0; ch < 2; ch++){ const d = ir.getChannelData(ch); let y = 0;
+        for(let i = 0; i < irN; i++){ y += .3 * ((Math.random()*2 - 1) - y); d[i] = y * Math.pow(1 - i / irN, 1.8); } }
+      const conv = ac.createConvolver(); conv.buffer = ir;
+      const hit = G(2.0); hit.connect(out); chain(hit, G(.6), conv, G(1.5), out);
+      // 1) 가슴을 치는 저음 한 방: 100 → 30Hz
+      const s1 = ac.createOscillator(); s1.frequency.setValueAtTime(100, B); s1.frequency.exponentialRampToValueAtTime(30, B + .45);
+      const s1g = G(0); env(s1g.gain, [[B, .0001], [B + .004, .85], [B + .5, .45], [B + 1.9, .0001]]);
+      chain(s1, s1g, shaper(2), out); s1.start(B); s1.stop(B + 2);
+      // 1-1) 같은 저음을 세게 포화시켜 150Hz~1kHz 배음으로: 작은 스피커에서도 "쿵"이 들리게
+      const s1h = G(0); env(s1h.gain, [[B, .0001], [B + .004, .9], [B + .35, .3], [B + 1.2, .0001]]);
+      chain(s1, shaper(7), F("bandpass", 320, .6), s1h, out);
+      const s2 = ac.createOscillator(); s2.frequency.setValueAtTime(52, B); s2.frequency.exponentialRampToValueAtTime(26, B + 1.2);
+      const s2g = G(0); env(s2g.gain, [[B, .0001], [B + .01, .3], [B + 2.5, .0001]]);
+      chain(s2, s2g, out); s2.start(B); s2.stop(B + 2.6);
+      // 2) 날카로운 파열음: 아주 짧은 "딱" + 높은 대역 잡음
+      const snap = G(0); env(snap.gain, [[B, 1.3], [B + .014, .0001]]); chain(buf(white, B, .03), snap, hit);
+      const crack = G(0); env(crack.gain, [[B, 1.1], [B + .13, .0001]]); chain(buf(white, B, .16), F("highpass", 1500), crack, hit);
+      // 2-1) 파편이 흩어지는 자글거림 (2~5kHz, 1.2초)
+      const deb = G(0); env(deb.gain, [[B + .02, .0001], [B + .06, .8], [B + 1.4, .0001]]);
+      const debAM = G(.5); chain(buf(white, B, 1.3), F("bandpass", 3200, .8), debAM, deb, hit);
+      chain(buf(white, B, 1.3), F("lowpass", 40), G(9), debAM.gain);   // 느린 잡음으로 크기를 흔들어 자글자글하게
+      // 3) 폭발 몸통: 밝게 터졌다가 어두워지며 길게 꺼짐
+      const bodyLP = F("lowpass", 8000); bodyLP.frequency.setValueAtTime(8000, B); bodyLP.frequency.exponentialRampToValueAtTime(180, B + 1.8);
+      const body = G(0); env(body.gain, [[B, .0001], [B + .004, 1.05], [B + .3, .45], [B + 2.4, .0001]]);
+      chain(buf(white, B, 2.45), bodyLP, body, hit);
+      // 3-1) 몸통의 중음 "콰-": 400Hz~1.2kHz 대역 잡음
+      const mid = G(0); env(mid.gain, [[B, .0001], [B + .006, 1.8], [B + .5, .6], [B + 1.8, .0001]]);
+      chain(buf(white, B, 1.7), F("bandpass", 650, .7), mid, hit);
+      // 4) 땅이 울리는 꼬리
+      const tail = G(0); env(tail.gain, [[B, .0001], [B + .05, .4], [B + 3.3, .0001]]);
+      chain(buf(brown, B, 3.4, true), F("lowpass", 150), tail, out);
+
+      post.gain.setValueAtTime(1, END - .3); post.gain.linearRampToValueAtTime(0, END);
+      return post;
+    }
+
+    const CHAIN_DELAY = .006;   // 마스터 리미터의 미리보기 지연(측정값 6ms)
+    function play(perfT0){
+      if(!pref.sfx || !ensure()) return;
+      const go = () => {
+        try{
+          stop(0);
+          // 소리가 실제로 스피커에서 나오는 시각이 화면과 맞도록, 출력 지연만큼 앞당겨 예약한다
+          const lat = Math.min(ctx.outputLatency || ctx.baseLatency || 0, .12) + CHAIN_DELAY;
+          master = build(ctx, ctx.currentTime - (performance.now() - perfT0) / 1000 - lat, masterIn());
+        }catch(e){}
+      };
+      if(ctx.state === "running") go(); else ctx.resume().then(go).catch(() => {});
+    }
+    return { play, stop, build, sfx, music:Music, musicBuild, masterChain, tickAt, clackAt };
+  })();
+
+  /* ---------- 시차 입력: 마우스 / 휴대폰 기울기 / (둘 다 없으면) 느린 자동 흔들림 ---------- */
+  let tx = 0, ty = 0, px = 0, py = 0, tilt = false;
+  addEventListener("pointermove", e => {
+    if(e.pointerType !== "mouse") return;
+    tx = (e.clientX / innerWidth - .5) * 2; ty = (e.clientY / innerHeight - .5) * 2;
+  });
+  addEventListener("deviceorientation", e => {
+    if(e.gamma == null || e.beta == null) return;
+    tilt = true;
+    tx = clamp(e.gamma / 20, -1, 1); ty = clamp((e.beta - 50) / 20, -1, 1);
+  });
+
+  const World = {
+    ok:false, mode:"title", sortieAt:-1, draw:null, resize:null,
+    setMode(m){ this.mode = m; sceneEl.classList.toggle("dim", m === "lobby"); if(this.resize) this.resize(); kick(); },
+    startSortie(t0){ this.sortieAt = t0; document.body.classList.add("sortie"); },
+    endSortie(){ this.sortieAt = -1; document.body.classList.remove("sortie"); },
+  };
+
+  /* ---------- 그리기 루프 ---------- */
+  let raf = 0, lastDraw = 0;
+  function tick(now){
+    raf = requestAnimationFrame(tick);
+    const lobby = World.mode === "lobby";
+    if(lobby && coarse() && now - lastDraw < 33) return;   // 휴대폰 로비는 초당 30장
+    const dt = Math.min((now - (lastDraw || now)) / 1000, .1); lastDraw = now;
+    if(coarse() && !tilt){ tx = Math.sin(now * .00025) * .5; ty = Math.sin(now * .00019) * .3; }
+    const e = 1 - Math.pow(.02, dt);                  // 프레임 속도와 무관한 부드러운 따라가기
+    px += (tx - px) * e; py += (ty - py) * e;
+    if(!lobby) logoWrap.style.transform = `translate3d(${(-px*4).toFixed(2)}px,${(-py*4).toFixed(2)}px,0)`;
+    if(World.ok) World.draw(now, dt);
+    else photoEl.style.transform = `translate3d(${(-px*8).toFixed(2)}px,${(-py*8).toFixed(2)}px,0)`;
+  }
+  function kick(){
+    cancelAnimationFrame(raf); raf = 0;
+    if(document.hidden) return;
+    if(reduce()){                                     // 움직임 줄이기: 정지 화면 한 장만
+      logoWrap.style.transform = "";
+      if(World.ok) World.draw(3000, 0, true);
+      return;
+    }
+    lastDraw = 0; raf = requestAnimationFrame(tick);
+  }
+  document.addEventListener("visibilitychange", kick);
+  addEventListener("resize", () => { if(World.resize) World.resize(); if(reduce()) kick(); });
+
+  /* ---------- 3D 장면 ---------- */
+  function initWorld(THREE){
+    const canvas = $("world"), mobile = coarse() || innerWidth < 760;
+    let renderer;
+    try{ renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:!mobile, powerPreference:"high-performance"}); }
+    catch(e){ return; }
+    renderer.setClearColor(0x000000, 0);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+    let seed = 20261111;
+    const rnd = () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+    const rr = (a,b) => a + (b - a) * rnd();
+    const AMBER = 0xC8913F, AMBER_L = 0xE8C58C, WARM = 0xFFF4E2;   // design.md 색만 사용
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x140c08, .0075);
+    const cam = new THREE.PerspectiveCamera(55, 1, .1, 900);
+    const LOOK = new THREE.Vector3(0, 12, -60);
+
+    /* 직접 그린 질감 (외부 이미지 없음) */
+    const canvasTex = (size, draw) => {
+      const c = document.createElement("canvas"); c.width = c.height = size;
+      draw(c.getContext("2d"), size);
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+    };
+    const glowTex = canvasTex(128, (g,s) => {
+      const r = g.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
+      r.addColorStop(0,"rgba(255,255,255,1)"); r.addColorStop(.25,"rgba(255,255,255,.55)");
+      r.addColorStop(.6,"rgba(255,255,255,.12)"); r.addColorStop(1,"rgba(255,255,255,0)");
+      g.fillStyle = r; g.fillRect(0,0,s,s);
+    });
+    const smokeTex = canvasTex(256, (g,s) => {
+      for(let i = 0; i < 34; i++){
+        const a = rnd()*6.283, d = rnd()*s*.24, x = s/2 + Math.cos(a)*d, y = s/2 + Math.sin(a)*d, r = rr(s*.12, s*.26);
+        const gr = g.createRadialGradient(x,y,0,x,y,r);
+        gr.addColorStop(0,"rgba(255,255,255,.16)"); gr.addColorStop(1,"rgba(255,255,255,0)");
+        g.fillStyle = gr; g.fillRect(0,0,s,s);
+      }
+    });
+    const floorTex = canvasTex(512, (g,s) => {            // 바닥 거칠기: 얼룩 + 줄눈
+      g.fillStyle = "#808080"; g.fillRect(0,0,s,s);
+      for(let i = 0; i < 260; i++){
+        const x = rnd()*s, y = rnd()*s, r = rr(10,70), v = rnd() < .5 ? "40,40,40" : "210,210,210";
+        const gr = g.createRadialGradient(x,y,0,x,y,r);
+        gr.addColorStop(0,`rgba(${v},.22)`); gr.addColorStop(1,`rgba(${v},0)`);
+        g.fillStyle = gr; g.fillRect(x-r,y-r,r*2,r*2);
+      }
+      g.strokeStyle = "rgba(235,235,235,.6)"; g.lineWidth = 3;
+      for(let i = 0; i <= 2; i++){ const p = i*s/2; g.beginPath(); g.moveTo(p,0); g.lineTo(p,s); g.moveTo(0,p); g.lineTo(s,p); g.stroke(); }
+    });
+    floorTex.colorSpace = THREE.NoColorSpace; floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping; floorTex.repeat.set(5,5);
+    const spillTex = canvasTex(256, (g,s) => {            // 문에서 바닥으로 번지는 불빛(가짜 반사)
+      const v = g.createLinearGradient(0,0,0,s);
+      v.addColorStop(0,"rgba(255,255,255,.95)"); v.addColorStop(.35,"rgba(255,255,255,.35)"); v.addColorStop(1,"rgba(255,255,255,0)");
+      g.fillStyle = v; g.fillRect(0,0,s,s);
+      g.globalCompositeOperation = "destination-in";
+      const h = g.createLinearGradient(0,0,s,0);
+      h.addColorStop(0,"rgba(0,0,0,0)"); h.addColorStop(.3,"rgba(0,0,0,1)"); h.addColorStop(.7,"rgba(0,0,0,1)"); h.addColorStop(1,"rgba(0,0,0,0)");
+      g.fillStyle = h; g.fillRect(0,0,s,s);
+    });
+
+    /* 재질 */
+    const steel = new THREE.MeshStandardMaterial({color:0x3a3b41, roughness:.55, metalness:.45});
+    const doorMat = new THREE.MeshStandardMaterial({color:0x35352f, roughness:.6, metalness:.4});
+    const wallMat = new THREE.MeshStandardMaterial({color:0x24252a, roughness:.85, metalness:.1});
+    const floorMat = new THREE.MeshStandardMaterial({color:0x202125, roughness:.8, metalness:.4, roughnessMap:floorTex});
+    const ruinMat = new THREE.MeshBasicMaterial({fog:false});
+
+    /* 상자 여러 개를 한 번에 그리기 */
+    const unit = new THREE.BoxGeometry(1,1,1), dummy = new THREE.Object3D();
+    const instanced = (list, mat) => {
+      const m = new THREE.InstancedMesh(unit, mat, list.length);
+      list.forEach((b,i) => {
+        dummy.position.set(b[0],b[1],b[2]); dummy.scale.set(b[3],b[4],b[5]); dummy.rotation.set(0,0,b[6]||0);
+        dummy.updateMatrix(); m.setMatrixAt(i, dummy.matrix);
+        if(b[7]) m.setColorAt(i, b[7]);
+      });
+      m.frustumCulled = false; scene.add(m); return m;
+    };
+
+    /* --- 근경·중경: 격납고 안 (폭 84 × 높이 44 × 깊이 90, 사람 키의 25배) --- */
+    const st = [];
+    const B = (...a) => st.push(a);
+    for(const z of [10,-4,-18,-32,-46]){
+      for(const s of [-1,1]){ B(s*31,22,z, 1.8,44,1.8); B(s*31,.6,z, 3.4,1.2,3.4); }      // 철골 기둥 + 받침
+      B(0,36,z, 62,.9,.9); B(0,42,z, 62,.9,.9);                                           // 천장 트러스 위·아래 줄
+      for(let i = 0; i < 10; i++) B(-31 + i*6.2 + 3.1, 39, z, 8.63,.5,.5, (i % 2 ? -1 : 1) * .768);
+    }
+    for(const s of [-1,1]){
+      B(s*31,34,-18, 1.2,1.6,60); B(s*31,43,-18, .8,.8,60);                              // 길이 방향 보
+      for(const y of [9,18,27]) B(s*41.5,y,-22, .6,.8,80);                               // 벽 띠
+      B(s*39,22,-60, 14,44,2);                                                           // 문 양옆 벽
+      B(s*32.6,17,-58.8, 1.2,34,1.2);                                                    // 문틀
+    }
+    B(0,39,-60, 64,10,2); B(0,34.6,-58.8, 66,1.2,1.2);                                   // 문 위 벽 + 문틀
+    B(-24,1.6,-36, 3,3.2,12); B(-24,4.8,-37, 3,3.2,12); B(24,1.6,-26, 3,3.2,12); B(21,1.6,-44, 12,3.2,3);   // 컨테이너(크기 비교용)
+    instanced(st, steel);
+
+    const plane = (w,h,mat,x,y,z,rx,ry) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w,h), mat);
+      m.position.set(x,y,z); m.rotation.set(rx,ry,0); scene.add(m); return m; };
+    plane(84,90, floorMat, 0,0,-15, -Math.PI/2, 0);
+    plane(84,90, wallMat, 0,44,-15, Math.PI/2, 0);
+    plane(90,44, wallMat, -42,22,-15, 0, Math.PI/2);
+    plane(90,44, wallMat, 42,22,-15, 0, -Math.PI/2);
+    const spill = plane(34,70, new THREE.MeshBasicMaterial({map:spillTex, color:AMBER, transparent:true, opacity:.5,
+      blending:THREE.AdditiveBlending, depthWrite:false, fog:false}), 0,.04,-25, -Math.PI/2, 0);
+
+    /* 반쯤 열린 격납고 문 (좌우 미닫이) */
+    const mkPanel = side => {
+      const g = new THREE.Group();
+      const add = (x,y,z,sx,sy,sz) => { const m = new THREE.Mesh(unit, doorMat); m.position.set(x,y,z); m.scale.set(sx,sy,sz); g.add(m); };
+      add(0,17,0, 32,34,1.2);
+      for(let y = 2.1; y < 34; y += 4.25) add(0,y,.8, 32,.6,.5);
+      add(-side*15.4,17,.9, 1.2,34,1.4);
+      g.position.z = -62; scene.add(g); return g;
+    };
+    const panelL = mkPanel(-1), panelR = mkPanel(1);
+
+    /* --- 중경: 문 너머 폐허 (무너진 고층 건물 + 크레인 실루엣, 멀수록 불빛에 물듦) --- */
+    const ruin = [];
+    const haze = z => new THREE.Color(0x090706).lerp(new THREE.Color(0x2c130a), clamp((-z - 130) / 210, 0, 1));
+    const tower = (x,z,w,h,tl) => {
+      const c = haze(z), sn = Math.sin(tl), cs = Math.cos(tl);
+      ruin.push([x - sn*h/2, cs*h/2, z, w,h,w, tl, c]);
+      for(let k = 0; k < 3; k++){                              // 부서진 윗부분
+        const ox = rr(-w*.35, w*.35), hh = rr(4,14), yy = h + hh/2 - 1;
+        ruin.push([x - sn*yy + cs*ox, cs*yy + sn*ox, z, rr(w*.15,w*.4),hh,w*.9, tl, c]);
+      }
+    };
+    const crane = (x,z,h,L,dir,droop) => {
+      const c = haze(z);
+      ruin.push([x,h/2,z, 1.8,h,1.8, 0, c], [x,h-2,z, 3.4,3.4,3.4, 0, c],
+        [x + dir*Math.cos(droop)*L/2, h-5 - Math.sin(droop)*L/2, z, L,1.3,1.3, -droop*dir, c],
+        [x - dir*L*.16, h-5, z, L*.32,1.6,1.6, 0, c]);
+    };
+    [[-30,-150,12,34,.12],[-44,-200,16,62,-.04],[27,-165,11,44,-.18],[50,-225,18,74,.05],
+     [-14,-270,10,30,.30],[16,-300,12,38,-.08],[-66,-270,20,60,.06],[72,-290,18,56,-.10]].forEach(t => tower(...t));
+    crane(-20,-235, 78,40, 1, 0); crane(36,-270, 86,46, -1, .05); crane(60,-190, 58,34, -1, .62);
+    for(let i = 0; i < 14; i++){ const z = rr(-300,-110); ruin.push([rr(-90,90), rr(.5,3), z, rr(8,26), rr(2,7), 6, rr(-.25,.25), haze(z)]); }   // 잔해 더미
+    instanced(ruin, ruinMat);
+    plane(900,420, new THREE.MeshBasicMaterial({color:0x050303, fog:false}), 0,-.05,-270, -Math.PI/2, 0);
+
+    /* 불길·폭발 빛 (가산 혼합 스프라이트) */
+    const glow = (color, x,y,z, sx,sy, op) => {
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex, color, transparent:true, opacity:op,
+        blending:THREE.AdditiveBlending, depthWrite:false, fog:false}));
+      s.position.set(x,y,z); s.scale.set(sx,sy,1); scene.add(s); return s;
+    };
+    glow(AMBER, 0,8,-380, 560,70, .3);                         // 지평선 전체가 달아오른 느낌
+    const fires = [[-30,5,-148,30],[27,6,-163,36],[-14,5,-268,30],[50,9,-223,48],[16,6,-298,34],[-44,7,-198,38]]
+      .map(([x,y,z,s]) => { const f = glow(AMBER, x,y,z, s,s*1.3, .5); f.userData = {s, ph:rnd()*9}; return f; });
+    const flashes = FLASHES.map(([,x,z], i) => glow(AMBER_L, x, 12 + i*2, z, 1,1, 0));
+    const blastGlow = glow(AMBER, 0,14,-92, 1,1, 0), blastCore = glow(0xFFF8EC, 0,14,-90, 1,1, 0);
+
+    /* 연기: 문 밖 연기 기둥 / 격납고 안 옅은 연무 / 폭발 때 화면으로 밀려오는 연기 */
+    const puff = (color, op, order) => {
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({map:smokeTex, color, transparent:true, opacity:op, depthWrite:false, fog:false}));
+      s.renderOrder = order || 0; scene.add(s); return s;
+    };
+    const columns = [];
+    for(const [x,z] of [[-30,-160],[26,-185],[-58,-230],[48,-250],[4,-300]])
+      for(let k = 0; k < 4; k++){ const s = puff(0x0c0706, 0); s.userData = {x, z, k:k/4 + rnd()*.1}; columns.push(s); }
+    const hazes = [];
+    for(let i = 0; i < (mobile ? 3 : 6); i++){ const s = puff(0xA19E97, .05);
+      s.userData = {x:rr(-26,26), y:rr(16,36), z:rr(-52,-8), s:rr(36,60), ph:rnd()*9}; s.scale.set(s.userData.s, s.userData.s*.6, 1); hazes.push(s); }
+    /* 로비 전용: 바닥 가까이 천천히 흐르는 연기층 + 문 안쪽에 어리는 불빛 */
+    const drift = [];
+    for(let i = 0; i < (mobile ? 4 : 7); i++){ const s = puff(AMBER_L, 0);
+      s.userData = {y:rr(2,10), z:rr(-58,-30), sp:rr(.006,.014) * (rnd() < .5 ? -1 : 1), ph:rnd(), s:rr(60,95)}; drift.push(s); }
+    const doorGlow = glow(AMBER, 0,13,-66, 70,50, 0);
+    const rush = [];
+    for(let i = 0; i < (mobile ? 8 : 14); i++){ const s = puff(0x16110e, 0, 5); s.material.depthTest = false;
+      s.userData = {a:[rr(-15,15), rr(2,26), -62], b:[rr(-11,11), rr(0,9), 0], d:rnd()*.3, s:rr(.8,1.3)}; rush.push(s); }
+
+    /* 빛줄기: 천장 탐조등 */
+    const beamGeo = new THREE.CylinderGeometry(.6, 7.5, 44, 28, 1, true); beamGeo.translate(0,-22,0);
+    const beams = [[-17,-16,.06],[15,-33,-.05],[-5,-49,.03]].map(([x,z,lean], i) => {
+      const m = new THREE.Mesh(beamGeo, new THREE.ShaderMaterial({
+        uniforms:{uC:{value:new THREE.Color(WARM)}, uO:{value:.16}},
+        vertexShader:`varying vec3 vN; varying vec3 vV; varying float vH;
+          void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); vH = uv.y; gl_Position = projectionMatrix*mv; }`,
+        fragmentShader:`uniform vec3 uC; uniform float uO; varying vec3 vN; varying vec3 vV; varying float vH;
+          void main(){ float f = pow(abs(dot(normalize(vN),normalize(vV))), 2.2);
+            gl_FragColor = vec4(uC, f*uO*mix(.2,1.,vH));
+            #include <colorspace_fragment>
+          }`,
+        transparent:true, depthWrite:false, side:THREE.DoubleSide, blending:THREE.AdditiveBlending}));
+      m.position.set(x,43.5,z); m.userData = {lean, ph:i*2.1}; scene.add(m); return m;
+    });
+
+    /* 조명 */
+    const hemi = new THREE.HemisphereLight(0x6b5a4a, 0x141210, 3.4); scene.add(hemi);
+    const doorLight = new THREE.DirectionalLight(AMBER_L, 4); doorLight.position.set(0,20,-130); doorLight.target.position.set(0,0,20);
+    scene.add(doorLight, doorLight.target);
+    const spots = beams.slice(0,2).map(b => {
+      const s = new THREE.SpotLight(WARM, 9, 0, .2, .8, 0); s.position.copy(b.position);
+      s.target.position.set(b.position.x, 0, b.position.z); scene.add(s, s.target); return s;
+    });
+    const fill = new THREE.DirectionalLight(WARM, 1.1); fill.position.set(-20,40,60); fill.target.position.set(0,14,-60);   // 구조물이 읽히도록 뒤에서 약하게
+    scene.add(fill, fill.target);
+    const flashAmb = new THREE.AmbientLight(AMBER_L, 0); scene.add(flashAmb);
+
+    /* 입자: 불씨 / 먼지 / 천장 부스러기 / 폭발 파편 (위치는 셰이더에서 계산) */
+    const PV = `uniform float uT,uPx,uAmt,uBt,uKind,uSz; attribute vec4 aR; varying float vA; varying float vM;
+      void main(){
+        vec3 p = position; float a = 1., sz = .1;
+        if(uKind < .5){                      // 불씨: 흔들리며 떠오름
+          p.y = mod(p.y + uT*mix(.7,2.4,aR.x), 40.);
+          p.x += sin(uT*(.3+aR.y) + aR.z*6.28)*1.8; p.z += cos(uT*(.25+aR.x) + aR.w*6.28)*1.4;
+          a = (.55 + .45*sin(uT*(2.+aR.z*5.) + aR.w*40.)) * smoothstep(40.,30.,p.y) * smoothstep(0.,1.5,p.y);
+          sz = mix(.07,.2,aR.w);
+        }else if(uKind < 1.5){               // 먼지: 아주 느리게
+          p.y = mod(p.y + uT*mix(.05,.25,aR.x), 40.); p.x += sin(uT*.15 + aR.z*6.28)*2.5;
+          a = mix(.2,.5,aR.y); sz = mix(.05,.11,aR.w);
+        }else if(uKind < 2.5){               // 천장에서 떨어지는 부스러기
+          p.y = 42. - mod(aR.x*42. + uT*mix(12.,26.,aR.y), 42.); p.x += sin(uT*9. + aR.z*30.)*.15;
+          a = uAmt * step(aR.w, uAmt*1.2); sz = mix(.08,.26,aR.z);
+        }else{                               // 폭발: 문에서 화면 쪽으로 쏟아짐
+          float t = max(uBt - aR.w*.25, 0.);
+          vec3 v = normalize(vec3((aR.x-.5)*1.5, (aR.y-.35), 1.)) * mix(28.,120.,aR.z);
+          p = p + v*t + vec3(0.,-9.,0.)*t*t*.5;
+          a = step(.001,t) * smoothstep(2.2,.9,t); sz = mix(.14,.55, aR.x*aR.z + .2*aR.y);
+        }
+        vec4 mv = modelViewMatrix*vec4(p,1.); gl_Position = projectionMatrix*mv;
+        float px = uPx*sz*uSz/max(-mv.z,.5);
+        gl_PointSize = clamp(px, 1.5, 96.);
+        vA = a*clamp(px/1.5, .25, 1.); vM = aR.z;
+      }`;
+    const PF = `uniform vec3 uC,uC2; varying float vA; varying float vM;
+      void main(){ float d = length(gl_PointCoord - .5); gl_FragColor = vec4(mix(uC,uC2,vM), smoothstep(.5,.08,d)*vA);
+        #include <colorspace_fragment>
+      }`;
+    const pts = [];
+    const mkPoints = (n, kind, gen, c1, c2, additive) => {
+      const pos = new Float32Array(n*3), r = new Float32Array(n*4);
+      for(let i = 0; i < n; i++){ pos.set(gen(), i*3); r.set([rnd(),rnd(),rnd(),rnd()], i*4); }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(pos,3)); geo.setAttribute("aR", new THREE.BufferAttribute(r,4));
+      const m = new THREE.Points(geo, new THREE.ShaderMaterial({
+        uniforms:{uT:{value:0},uPx:{value:1},uAmt:{value:0},uBt:{value:0},uSz:{value:1},uKind:{value:kind},uC:{value:new THREE.Color(c1)},uC2:{value:new THREE.Color(c2)}},
+        vertexShader:PV, fragmentShader:PF, transparent:true, depthWrite:false,
+        blending:additive ? THREE.AdditiveBlending : THREE.NormalBlending}));
+      m.frustumCulled = false; m.userData.n = n; scene.add(m); pts.push(m); return m;
+    };
+    const q = mobile ? .38 : 1;                               // 휴대폰은 입자 수를 줄임
+    const embers = mkPoints(Math.round(760*q), 0, () => [rr(-38,38), rr(0,40), rnd() < .3 ? rr(-150,-62) : -58 + Math.pow(rnd(),1.6)*70], AMBER, AMBER_L, true);
+    mkPoints(Math.round(520*q), 1, () => [rr(-38,38), rr(0,40), rr(-56,12)], 0xEEE9E0, 0xA19E97, true);
+    const debris = mkPoints(Math.round(520*q), 2, () => [rr(-36,36), 0, rr(-54,6)], 0xA19E97, 0x66645F, false);
+    const burst = mkPoints(Math.round(760*q), 3, () => [rr(-14,14), rr(3,24), -62], AMBER, AMBER_L, true);
+    const chunks = mkPoints(Math.round(170*q), 3, () => [rr(-14,14), rr(3,24), -62], 0x0B0C10, 0x2A241B, false);
+
+    /* 화면 크기·화질 */
+    let W = 1, H = 1, camZ = 8, kA = 1, baseFov = 55, pr = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 1.75);
+    function resize(){
+      W = innerWidth; H = innerHeight;
+      renderer.setPixelRatio(pr * (World.mode === "lobby" ? .7 : 1));   // 로비는 어차피 흐리게 깔리므로 낮은 화질
+      renderer.setSize(W, H, false);
+      const asp = W / H, k = kA = clamp((asp - .7) / .7, 0, 1);              // 세로 화면이면 문 쪽으로 다가가고 화각을 넓힘
+      cam.aspect = asp; camZ = -20 + 28*k;
+      baseFov = clamp(2 * Math.atan(Math.tan(25 * Math.PI/180) / asp) * 180/Math.PI, 55, 88);
+      const gap = 26 + 8*k;
+      panelL.position.x = -(gap/2 + 16); panelR.position.x = gap/2 + 16; spill.scale.x = gap / 34;
+    }
+
+    /* 원경 사진을 "아주 먼 곳에 세운 판"처럼 화면에 배치 → 카메라가 움직이면 가장 느리게 따라옴 */
+    const PW = 760, PH = PW * 550/1200, PY = -20 + PH/2, PZ = -400;
+    const vc = new THREE.Vector3(), vr = new THREE.Vector3(), vu = new THREE.Vector3();
+    function placePhoto(sc){
+      vc.set(0,PY,PZ).project(cam); vr.set(PW/2,PY,PZ).project(cam); vu.set(0,PY+PH/2,PZ).project(cam);
+      const cx = (vc.x*.5+.5)*W, cy = (-vc.y*.5+.5)*H;
+      const a = ((vr.x*.5+.5)*W - cx)*sc/600, b = ((-vr.y*.5+.5)*H - cy)*sc/600;
+      const c = -((vu.x*.5+.5)*W - cx)*sc/275, d = -((-vu.y*.5+.5)*H - cy)*sc/275;
+      photoEl.style.transform = `matrix(${a.toFixed(5)},${b.toFixed(5)},${c.toFixed(5)},${d.toFixed(5)},${(cx-600*a-275*c).toFixed(2)},${(cy-600*b-275*d).toFixed(2)})`;
+    }
+
+    /* 화질 자동 조절: 느리면 해상도 → 입자 수 순서로 낮춤 */
+    let slowSum = 0, slowN = 0, halved = false;
+    function adapt(dt){
+      if(World.sortieAt >= 0 || World.mode !== "title" || dt <= 0) return;
+      slowSum += dt; if(++slowN < 45) return;
+      const avg = slowSum / slowN; slowSum = slowN = 0;
+      if(avg < .024) return;
+      if(pr > .7){ pr = Math.max(.7, pr * .8); resize(); }
+      else if(!halved){ halved = true; pts.forEach(p => p.geometry.setDrawRange(0, Math.ceil(p.userData.n / 2))); }
+    }
+
+    function draw(now, dt, still){
+      const t = now / 1000, lobby = World.mode === "lobby", par = lobby ? .35 : 1;
+      const s = World.sortieAt >= 0 ? (now - World.sortieAt) / 1000 : -1;
+
+      /* 출격 연출 상태값 */
+      let A = 0, flick = 1, amt = 0, bt = -1, fl = 0;
+      if(s >= 0){
+        const k1 = Math.min(s / T.rumble2, 1), k2 = clamp((s - T.rumble2) / (T.blast - T.rumble2), 0, 1);
+        if(s < T.blast){
+          A = .05*k1 + .20*k2*k2;                                   // ① 0→0.05  ② →0.25 (카메라 단위 m)
+          amt = .25*k1 + .75*k2;
+          const depth = .2*k1 + .6*k2, h = hash(Math.floor(s*22));
+          flick = h < depth*.7 ? 1 - depth*(.5 + .5*hash(Math.floor(s*22) + 9.3)) : 1;   // 조명 깜빡임
+        }else{
+          bt = s - T.blast;
+          A = 1.0*Math.exp(-bt*3.2) + .06*Math.exp(-bt*.8);         // ③ 폭발 순간 최대 1.0
+          amt = Math.exp(-bt*1.5); flick = .12;
+          fl = 9*Math.exp(-bt*5) + 1.2*Math.exp(-bt*1.2);
+        }
+        FLASHES.forEach(([ti], i) => {                               // ② 다가오는 폭발
+          const e = s - ti, f = flashes[i];
+          if(e > 0 && e < .6){
+            const v = Math.exp(-e*7), sc = (50 + i*18) * (1 + e*1.5);
+            f.material.opacity = v; f.scale.set(sc, sc, 1);
+            fl += (.25 + .18*i) * v; A += .02*(i+1) * Math.exp(-e*9);
+          }else f.material.opacity = 0;
+        });
+      }else flashes.forEach(f => f.material.opacity = 0);
+
+      /* 카메라: 시차 + 떨림 + 충격파(앞으로 밀림, 화각 벌어짐) */
+      const push = bt >= 0 ? 1 - Math.pow(1 - Math.min(bt/.9, 1), 3) : 0;
+      const shx = A * (Math.sin(s*94.2 + 1) + .6*Math.sin(s*151) + .3*Math.sin(s*233 + 2)) * .7;
+      const shy = A * (Math.sin(s*107 + .5) + .6*Math.sin(s*171 + 1.3)) * .6;
+      if(lobby) cam.position.set(-(8 + 6*kA) + px*par*3.2, 6 - py*par*1.2, camZ - (10 + 20*kA));   // 작전실 쪽: 문에 더 가깝고 왼쪽, 조금 높게. 떨림 없음
+      else cam.position.set(px*par*3.2 + shx, 2.2 - py*par*1.2 + shy, camZ - 14*push);
+      cam.fov = baseFov + (bt >= 0 ? 9 * Math.exp(-bt*3) * Math.min(bt*20, 1) : 0);
+      cam.updateProjectionMatrix();
+      if(lobby) cam.lookAt(4 + 4*kA + px*par*.8, 13, LOOK.z); else cam.lookAt(LOOK.x + px*par*.8, LOOK.y, LOOK.z);
+      cam.rotateZ(A * .02 * Math.sin(s*69));
+      cam.updateMatrixWorld();
+      placePhoto(1 + .12*push);
+
+      /* 조명: 불빛은 숨쉬듯 일렁이고, 탐조등은 천천히 흔들림 */
+      const breath = 1 + .12*Math.sin(t*.8) + .05*Math.sin(t*7.3);
+      // 로비: 문 너머 불빛이 불규칙하게 깜빡임 (느린 일렁임 + 빠른 떨림 + 가끔 확 밝아짐)
+      const fk = lobby ? .8 + .22*Math.sin(t*2.1)*Math.sin(t*3.3 + 1.3) + .13*Math.sin(t*9.7 + Math.sin(t*1.3)*2) + (hash(Math.floor(t*6)) > .86 ? .22 : 0) : 1;
+      doorLight.intensity = 4 * breath * fk * (1 + fl*2.2);
+      doorGlow.material.opacity = lobby ? .34 * fk : 0;
+      drift.forEach(d => { const u = d.userData, ph = (((t*u.sp + u.ph) % 1) + 1) % 1;
+        d.position.set(-75 + ph*150, u.y + Math.sin(t*.2 + u.ph*9)*.8, u.z); d.scale.set(u.s, u.s*.22, 1);
+        d.material.opacity = lobby ? .1 * Math.sin(Math.PI*ph) * fk : 0; });
+      embers.material.uniforms.uSz.value = lobby ? 2.6 : 1;      // 흐린 유리 뒤에서도 떠오르는 게 보이도록 크게
+      embers.geometry.setDrawRange(0, Math.ceil(embers.userData.n * ((mobile && lobby) || halved ? .5 : 1)));
+      flashAmb.intensity = fl * .7;
+      renderer.toneMappingExposure = 1 + Math.min(fl, 6) * .12;
+      spill.material.opacity = Math.min(.5 * breath * fk * (1 + fl*.5), 1);
+      spots.forEach(sp => sp.intensity = 9 * flick);
+      beams.forEach(b => { b.rotation.z = b.userData.lean + Math.sin(t*.25 + b.userData.ph) * .05;
+        b.rotation.x = Math.sin(t*.19 + b.userData.ph) * .03;
+        b.material.uniforms.uO.value = .16 * flick * (.9 + .1*Math.sin(t*.7 + b.userData.ph)); });
+      fires.forEach(f => { const u = f.userData, k = .75 + .25*Math.sin(t*5.1 + u.ph) * Math.sin(t*3.3 + u.ph*2);
+        f.material.opacity = .5*k; f.scale.set(u.s*k, u.s*1.3*k, 1); });
+
+      /* 연기 */
+      columns.forEach(c => { const u = c.userData, ph = (t*.025 + u.k) % 1, sc = 30 + ph*80;
+        c.position.set(u.x + ph*28, 12 + ph*135, u.z); c.scale.set(sc, sc, 1); c.material.opacity = .62 * Math.sin(Math.PI*ph); });
+      hazes.forEach(h => { const u = h.userData; h.position.set(u.x + Math.sin(t*.07 + u.ph)*8, u.y + Math.sin(t*.11 + u.ph)*1.5, u.z); });
+      rush.forEach(r => { const u = r.userData, k = bt >= 0 ? clamp((bt - u.d) / .8, 0, 1) : 0, e = k*k*(3 - 2*k);
+        r.position.set(u.a[0] + (u.b[0] - u.a[0])*e, u.a[1] + (u.b[1] - u.a[1])*e, u.a[2] + (cam.position.z - 3 - u.a[2])*e);
+        const sc = (10 + 80*e) * u.s; r.scale.set(sc, sc, 1); r.material.opacity = Math.min(k*3, 1) * .85; });
+      blastGlow.material.opacity = bt >= 0 ? Math.exp(-bt*2.2) : 0; blastCore.material.opacity = bt >= 0 ? Math.exp(-bt*4.5) : 0;
+      if(bt >= 0){ const g = 30 + Math.min(bt, 1)*420; blastGlow.scale.set(g, g, 1); const k = 20 + Math.min(bt, 1)*200; blastCore.scale.set(k, k, 1); }
+
+      /* 입자 */
+      const uPx = renderer.domElement.height / (2 * Math.tan(cam.fov * Math.PI / 360));
+      pts.forEach(p => { const u = p.material.uniforms; u.uT.value = t; u.uPx.value = uPx; });
+      debris.material.uniforms.uAmt.value = amt;
+      burst.material.uniforms.uBt.value = chunks.material.uniforms.uBt.value = bt;
+      burst.visible = chunks.visible = bt >= 0; debris.visible = amt > .01;
+
+      renderer.render(scene, cam);
+      if(!still) adapt(dt);
+    }
+
+    canvas.addEventListener("webglcontextlost", e => { e.preventDefault(); World.ok = false; sceneEl.classList.add("flat"); photoEl.style.transform = ""; });
+    World.draw = draw; World.resize = resize; World.ok = true;
+    sceneEl.classList.remove("flat");
+    resize(); kick();
+  }
+
+  /* three.js 를 못 불러오거나 WebGL이 안 되면 사진 배경만 남는다 */
+  kick();
+  import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js").then(initWorld).catch(() => {});
+})();
+</script>
+</body>
+</html>
