@@ -683,10 +683,16 @@
       pref.music = (m === null ? old : m) !== "off"; pref.sfx = (s === null ? old : s) !== "off";
     }catch(e){}
     const save = k => { try{ localStorage.setItem(k === "music" ? "hubMusic" : "hubSfx", pref[k] ? "on" : "off"); }catch(e){} };
+    /* 아이폰 무음 스위치: Web Audio는 기본이 "주변음"이라 무음 스위치를 켜면 소리가 안 난다.
+       iOS 17 이상(사파리·카카오톡 등 인앱 브라우저 포함)은 audioSession 을 "재생"으로 바꾸면 해결된다. */
+    try{ if(navigator.audioSession) navigator.audioSession.type = "playback"; }catch(e){}
     function ensure(){
       const AC = window.AudioContext || window.webkitAudioContext;
       if(!AC) return null;
-      try{ ctx = ctx || new AC(); if(ctx.state === "suspended") ctx.resume(); }catch(e){ ctx = null; }
+      try{
+        if(!ctx){ ctx = new AC(); ctx.onstatechange = () => { if(ctx.state !== "running" && !document.hidden) armUnlock(); }; }
+        if(ctx.state !== "running" && ctx.state !== "closed") ctx.resume().catch(() => {});   // 사용자 동작 안에서 바로 (await 없이)
+      }catch(e){ ctx = null; }
       return ctx;
     }
 
@@ -933,7 +939,7 @@
     }
 
     const Music = (() => {
-      let m = null, timer = 0, ducked = false;
+      let m = null, timer = 0, ducked = false, pendingDuck = 0;
       const g = () => m.out.gain;
       const target = () => (pref.music && !document.hidden) ? (ducked ? MUSIC_LEVEL * .08 : MUSIC_LEVEL) : 0;
       const ramp = (v, tc, at) => { if(!m) return; const p = g(), now = ctx.currentTime;
@@ -942,15 +948,18 @@
       function start(){
         if(!pref.music || !ctx) return;
         if(ctx.state !== "running"){ ctx.resume().then(() => { if(ctx.state === "running") start(); }).catch(() => {}); return; }
+        if(m && timer) return;                                // 이미 재생 중이면 그대로 (터치 한 번에 깨우기가 여러 번 들어와도 음량 흐름을 덮어쓰지 않게)
         if(!m){ m = musicBuild(ctx, masterIn(), ctx.currentTime); g().setValueAtTime(0, ctx.currentTime); }
         tick(); clearInterval(timer); timer = setInterval(tick, 100);
         ramp(target(), 1.3);                                  // 약 4초에 걸쳐 서서히 들어옴
+        if(pendingDuck){ const p = pendingDuck; pendingDuck = 0; duckSortie(p); }   // 출격 중에 막 깨어났으면 출격 흐름에 맞춰 줄인다
       }
       function stop(){ if(!m) return; ramp(0, .2); clearInterval(timer); timer = 0; }
       /* 출격: 차오르는 동안 35%로 비켜 주고, 폭발 직전 정적(0.1초)부터 8%로 내린다 */
       function duckSortie(perfT0){
-        if(!m || !pref.music) return;
         ducked = true;
+        if(!m){ pendingDuck = perfT0; return; }               // 아직 음악이 안 만들어졌으면 만들어지는 순간 적용
+        if(!pref.music) return;
         const B = ctx.currentTime - (performance.now() - perfT0) / 1000 + T.blast;
         ramp(MUSIC_LEVEL * .35, .4);
         g().setTargetAtTime(MUSIC_LEVEL * .08, Math.max(B - T.quiet, ctx.currentTime + .05), .012);
@@ -958,7 +967,7 @@
       function duckNow(){ ducked = true; if(m && pref.music) ramp(MUSIC_LEVEL * .08, .03); }
       /* 로비가 나타나는 순간: 다음 16분음표를 1마디 첫 박으로 다시 시작하고, 그 박에 "터짐"과 함께 음악이 힘차게 들어온다 */
       function restore(){
-        ducked = false;
+        ducked = false; pendingDuck = 0;
         if(!m || !pref.music) return;
         const at = m.restart();
         ramp(target(), .03, at - .03);
@@ -978,16 +987,58 @@
     bMusic.addEventListener("click", () => { pref.music = !pref.music; save("music"); paint(); pref.music ? Music.start() : Music.stop(); });
     bSfx.addEventListener("click", () => { pref.sfx = !pref.sfx; save("sfx"); paint(); if(pref.sfx) sfx("clack"); else stop(.1); });
 
-    /* 브라우저는 사용자 동작 전 자동 재생을 막는다 → 첫 클릭·터치·키 입력 순간 소리를 깨우고 배경음악을 시작 */
-    const UNLOCK = ["pointerdown", "pointerup", "keydown"];
-    const unlock = e => {
+    /* 브라우저는 사용자 동작 전 자동 재생을 막는다 → 첫 클릭·터치·키 입력 순간 소리를 깨우고 배경음악을 시작.
+       아이폰(사파리·카카오톡 인앱)은 touchend·click 에서만 풀리므로 그 이벤트도 듣는다.
+       AudioContext 생성과 resume() 은 이벤트 안에서 바로(await·setTimeout 없이) 부른다. */
+    const UNLOCK = ["pointerdown", "pointerup", "touchend", "click", "keydown"];
+    const OPT = { capture:true, passive:true };
+    // 무음 스위치 대비(iOS 16 이하 등 audioSession 이 없는 기기): 아주 짧은 무음 소리를 HTML <audio> 로 한 번 재생해
+    // "미디어 재생"으로 인식시킨다. 0.05초짜리 무음 WAV를 코드로 만든다
+    const silentAudio = (() => {
+      try{
+        const n = 400, b = new Uint8Array(44 + n * 2), v = new DataView(b.buffer);
+        const str = (o, t) => { for(let i = 0; i < t.length; i++) b[o + i] = t.charCodeAt(i); };
+        str(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); str(8, "WAVEfmt "); v.setUint32(16, 16, true);
+        v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 8000, true); v.setUint32(28, 16000, true);
+        v.setUint16(32, 2, true); v.setUint16(34, 16, true); str(36, "data"); v.setUint32(40, n * 2, true);
+        let bin = ""; for(let i = 0; i < b.length; i++) bin += String.fromCharCode(b[i]);
+        const a = document.createElement("audio");
+        a.src = "data:audio/wav;base64," + btoa(bin); a.preload = "auto";
+        a.setAttribute("playsinline", ""); a.setAttribute("webkit-playsinline", ""); a.setAttribute("x-webkit-airplay", "deny");
+        return a;
+      }catch(e){ return null; }
+    })();
+    let mediaPoked = false, armed = false;
+    function armUnlock(){                                     // 깨우기 이벤트를 (다시) 건다. 이미 걸려 있으면 그대로
+      if(armed) return; armed = true; mediaPoked = false;
+      UNLOCK.forEach(t => addEventListener(t, unlock, OPT));
+    }
+    function disarm(){ armed = false; UNLOCK.forEach(t => removeEventListener(t, unlock, OPT)); }
+    function unlock(e){
       if(e.type === "keydown" && (e.key === "Escape" || e.repeat)) return;   // Esc는 사용자 동작으로 치지 않는다
-      if(!ensure()) return;
+      if(silentAudio && !mediaPoked){                          // 무음 <audio> 한 번 (실패해도 무시)
+        mediaPoked = true;
+        try{ silentAudio.currentTime = 0; const p = silentAudio.play(); if(p && p.catch) p.catch(() => { mediaPoked = false; }); }catch(err){ mediaPoked = false; }
+      }
+      if(!ensure()) return;                                    // 생성 + resume() 을 이 자리에서 바로
+      try{                                                     // 무음 버퍼를 한 번 재생해 오디오 출력을 확실히 깨운다
+        const b = ctx.createBuffer(1, 1, 22050), src = ctx.createBufferSource();
+        src.buffer = b; src.connect(ctx.destination); src.start(0);
+      }catch(err){}
       masterIn();                                             // 마스터를 먼저 만들어 둔다 (위 masterChain 설명)
-      const ok = () => { UNLOCK.forEach(t => removeEventListener(t, unlock, true)); Music.start(); };
+      const ok = () => { if(!armed) return; disarm(); Music.start(); };   // 한 번만 (같은 터치의 다른 이벤트가 늦게 와도 무시)
       if(ctx.state === "running") ok(); else ctx.resume().then(() => { if(ctx.state === "running") ok(); }).catch(() => {});
+    }
+    armUnlock();
+    /* 화면을 껐다 켜거나 다른 앱에 갔다 왔을 때: 멈춰 있으면 다시 깨운다.
+       바로 resume() 을 시도하고, 브라우저가 막으면(아이폰) 다음 터치 때 깨우도록 깨우기 이벤트를 다시 건다 */
+    const wake = () => {
+      if(document.hidden || !ctx || ctx.state === "running") return;
+      ctx.resume().then(() => { if(ctx.state === "running") Music.start(); }).catch(() => {});
+      armUnlock();
     };
-    UNLOCK.forEach(t => addEventListener(t, unlock, true));
+    document.addEventListener("visibilitychange", wake);
+    addEventListener("pageshow", wake);                       // 뒤로가기 캐시(bfcache)에서 돌아왔을 때
 
     function stop(fade){
       if(!master || !ctx) return;
